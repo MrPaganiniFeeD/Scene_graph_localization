@@ -4,10 +4,18 @@ import torch
 from features import iou2d_xyxy, aabb_iou_3d, angle_sin_cos
 import pandas as pd
 import re
+import math
 
-root_dir = r'C:\Users\Egor\VsCode project\Scene_graph_localization\data'                     # корень с папками map1, map2, ...
-output_dir = r'C:\Users\Egor\VsCode project\Scene_graph_localization\res'  # общая папка для результатов
-os.makedirs(output_dir, exist_ok=True)
+
+from sklearn.neighbors import NearestNeighbors
+from sklearn.cluster import KMeans
+from sklearn.metrics import pairwise_distances_argmin_min
+from collections import Counter
+
+#root_dir = '/home/amelekhin96/pinkin_ek/data/sber'                     # корень с папками map1, map2, ...
+#output_dir = '/home/amelekhin96/pinkin_ek/data/graph/test' # общая папка для результатов
+
+#os.makedirs(output_dir, exist_ok=True)
 
 
 T_2_1 = np.array([
@@ -109,8 +117,10 @@ def convert_one(json_path, poses, out_path, edge_label2idx):
     N = len(nodes)
 
     # 16 dims
-    node_feats = []
+    node_cont_feats = []   # непрерывные признаки (без class_idx)
+    node_class_idx = []    # только индекс класса
     node_meta = []
+    node_x = torch.tensor(np.array(node_cont_feats, dtype=np.float32))
     for n in nodes:
         d = n.get('data', {})
         cname = d.get('class_name', 'unknown')
@@ -136,15 +146,31 @@ def convert_one(json_path, poses, out_path, edge_label2idx):
         extent = [float(x) for x in extent]
         visible = 1.0 if d.get('visible_current_frame', False) else 0.0
         obs = float(d.get('observation_count', 0))
-        vec = [class_idx, cx, cy, w, h, conf,
+        vec = [cx, cy, w, h, conf,
                center3[0], center3[1], center3[2],
                extent[0], extent[1], extent[2],
                visible, obs]
-        node_feats.append(vec)
+        node_cont_feats.append(vec)
         node_meta.append({'id': n['id'], 'class_name': d.get('class_name','unknown'), 'xyxy':xyxy, 'center2':[cx,cy]})
-        node_x = torch.tensor(np.array(node_feats, dtype=np.float32))
+        node_class_idx.append(int(class_idx))   # целочисленный индекс
+    # теперь node_x формируем после цикла
+    if len(node_cont_feats) > 0:
+        node_x = torch.tensor(np.array(node_cont_feats, dtype=np.float32))
+    else:
+        # fallback: пустой тензор с ожидаемым числом признаков
+        # если хочешь другой размер — измени feat_dim
+        feat_dim = len(node_cont_feats[0]) if len(node_cont_feats) > 0 else 13
+        node_x = torch.empty((0, feat_dim), dtype=torch.float32)
 
     # global centers for normalization
+    if len(node_meta) >= 2:
+        centers2 = np.array([nm['center2'] for nm in node_meta], dtype=float)
+        max_dist2 = float(np.nanmax(np.linalg.norm(centers2[:,None,:] - centers2[None,:,:], axis=-1)))
+        max_dist2 = max(max_dist2, 1e-6)
+    else:
+        max_dist2 = 1.0
+
+    # global centers for normalizationтщву
     centers2 = np.array([nm['center2'] for nm in node_meta], dtype=float)
     max_dist2 = float(np.nanmax(np.linalg.norm(centers2[:,None,:] - centers2[None,:,:], axis=-1))) if N>=2 else 1.0
     max_dist2 = max(max_dist2, 1e-6)
@@ -203,6 +229,7 @@ def convert_one(json_path, poses, out_path, edge_label2idx):
 
     out = {
         'x': node_x,
+        'node_class': torch.tensor(node_class_idx, dtype=torch.long),
         'edge_index': edge_index,
         'edge_attr': edge_attr_t,
         'edge_label': edge_label_t,
@@ -218,48 +245,338 @@ def convert_one(json_path, poses, out_path, edge_label2idx):
     torch.save(out, out_path)
     return out
 
-edge_label2idx = build_label_maps(root_dir)
+#!/usr/bin/env python3
+"""
+split_and_convert.py
 
-# Получаем все подпапки, имена которых начинаются с "map" и содержат цифры
-map_dirs = [d for d in os.listdir(root_dir)
-            if os.path.isdir(os.path.join(root_dir, d)) and re.match(r'^map\d+$', d)]
+Scan maps in root_dir, convert JSON graph files to .pt using convert_one(), and split into
+`database` and `queries` according to chosen strategy.
 
-for map_dir in map_dirs:
-    # Извлекаем номер карты (например, "map3" -> 3)
-    map_num = re.search(r'\d+', map_dir).group()
-    map_num = int(map_num)
+Strategies:
+  - simple: every k-th frame is a candidate query, then filter by spatial min_sep (median*factor)
+  - cluster: cluster DB into M clusters and pick one query per cluster (closest to center)
+  - kcenter: choose queries by k-center greedy on precomputed query features (requires --queries_feats)
 
-    # Путь к папке с JSON-файлами графов
-    graphs_dir = os.path.join(root_dir, map_dir, 'graphs')
-    if not os.path.isdir(graphs_dir):
-        print(f"Предупреждение: {graphs_dir} не существует, пропускаем")
-        continue
+Saves:
+  - converted .pt under output_dir/{database,queries}
+  - split metadata JSON: output_dir/splits.json with lists and parameters
 
-    # Загружаем poses для текущей карты (предполагается файл poses.csv в папке карты)
-    poses_path = os.path.join(root_dir, map_dir, 'poses.csv')
-    if os.path.isfile(poses_path):
-        poses_df = pd.read_csv(poses_path)
-    else:
-        print(f"Предупреждение: {poses_path} не найден, передаю пустой массив")
-        poses = np.array([], dtype=np.float32)   # или можно выйти с ошибкой
+Usage examples:
+  python split_and_convert.py --root_dir /data/sber --output_dir /out/graph --strategy simple
+  python split_and_convert.py --strategy cluster --k_clusters 150
+  python split_and_convert.py --strategy kcenter --kcenter_k 150 --queries_feats /path/q_feats.npy
 
-    # Находим все JSON-файлы в папке graphs
+"""
+
+
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument('--root_dir', type=str, default='/home/amelekhin96/pinkin_ek/data/sber')
+    p.add_argument('--output_dir', type=str, default='/home/amelekhin96/pinkin_ek/data/graph/test')
+    p.add_argument('--map', type=str, default=None, help='Specific map directory name, e.g. map8. If omitted process last map by default')
+    p.add_argument('--strategy', type=str, choices=['simple', 'cluster', 'kcenter'], default='simple')
+    p.add_argument('--k', type=int, default=3, help='for simple: every k-th is candidate')
+    p.add_argument('--min_sep_factor', type=float, default=2.0, help='factor * median_nearest_dist to decide min_sep')
+    p.add_argument('--k_clusters', type=int, default=150, help='for cluster strategy: number of clusters')
+    p.add_argument('--kcenter_k', type=int, default=150, help='for kcenter strategy: number of queries to select')
+    p.add_argument('--queries_feats', type=str, default=None, help='path to numpy .npy with queries features (Q x D) required for kcenter')
+    p.add_argument('--save_splits_json', action='store_true', help='save splits metadata to output_dir/splits.json')
+    p.add_argument('--force_overwrite', action='store_true', help='overwrite existing .pt files')
+    return p.parse_args()
+
+
+def collect_json_files(graphs_dir):
     json_files = glob.glob(os.path.join(graphs_dir, '*.json'))
-    json_files.sort()  # для порядка
+    json_files.sort()
+    return json_files
 
-    for json_path in json_files:
-        # Извлекаем имя файла без расширения (например, "00001")
+
+def gather_all_entries(json_files, map_num, poses_df):
+    all_entries = []
+    for idx, json_path in enumerate(json_files):
         base = os.path.basename(json_path)
-        file_stem = os.path.splitext(base)[0]
-        print("base",base)
-
-        # Формируем выходное имя: mapX_00001.pt
+        file_stem = base.split('.')[0]
         out_filename = f"map{map_num}_{file_stem}.pt"
-        out_path = os.path.join(output_dir, out_filename)
+        try:
+            frame_id = int(file_stem)
+            poses = get_position(poses_df, frame_id, map_num)
+        except Exception as e:
+            print(f"[WARN] cannot get pose for {json_path}: {e}")
+            poses = None
+        all_entries.append({
+            'idx': idx,
+            'json_path': json_path,
+            'base': base,
+            'file_stem': file_stem,
+            'out_filename': out_filename,
+            'pose': poses
+        })
+    return all_entries
 
-        print(f"Обработка {json_path} -> {out_path}")
-        frame_id = int(base.split('.')[0])
-        poses = get_position(poses_df, frame_id, map_num)
-        convert_one(json_path, poses, out_path, edge_label2idx)
 
-print("Готово!")
+def simple_selection(all_entries, k=3, min_sep_factor=2.0, output_dir=None, poses_df=None):
+    candidate_query_idxs = [e['idx'] for e in all_entries if e['idx'] % k == 0]
+    candidate_db_idxs = [e['idx'] for e in all_entries if e['idx'] % k != 0]
+
+    db_with_pos = [(i, float(all_entries[i]['pose'][0]), float(all_entries[i]['pose'][1]))
+                   for i in candidate_db_idxs if all_entries[i]['pose'] is not None]
+    q_with_pos = [(i, float(all_entries[i]['pose'][0]), float(all_entries[i]['pose'][1]))
+                  for i in candidate_query_idxs if all_entries[i]['pose'] is not None]
+
+    if len(db_with_pos) == 0 or len(q_with_pos) == 0:
+        print('[WARN] Not enough poses; falling back to naive split')
+        return candidate_query_idxs, candidate_db_idxs, {'min_sep': None, 'median_dist': None}
+
+    db_xy = np.array([[p[1], p[2]] for p in db_with_pos])
+    q_xy = np.array([[p[1], p[2]] for p in q_with_pos])
+    db_idx_map = [p[0] for p in db_with_pos]
+    q_idx_map = [p[0] for p in q_with_pos]
+
+    nn = NearestNeighbors(n_neighbors=1, n_jobs=-1).fit(db_xy)
+    dists, _ = nn.kneighbors(q_xy, return_distance=True)
+    dists = dists.ravel()
+    median_dist = float(np.median(dists))
+    min_sep = median_dist * min_sep_factor
+
+    keep_query_global_idxs = []
+    move_to_db_global_idxs = []
+    q_map = {gidx: dist for gidx, dist in zip(q_idx_map, dists)}
+    for gidx in candidate_query_idxs:
+        if gidx in q_map:
+            if q_map[gidx] >= min_sep:
+                keep_query_global_idxs.append(gidx)
+            else:
+                move_to_db_global_idxs.append(gidx)
+        else:
+            move_to_db_global_idxs.append(gidx)
+
+    final_db_set = set(candidate_db_idxs) | set(move_to_db_global_idxs)
+    final_query_set = set(keep_query_global_idxs)
+    final_db_idxs = sorted(list(final_db_set - final_query_set))
+    final_query_idxs = sorted(list(final_query_set))
+
+    # auto relax if too few queries
+    min_queries_desired = max(50, int(0.15 * (len(all_entries))))
+    if len(final_query_idxs) < min_queries_desired:
+        print(f"[WARN] too few queries ({len(final_query_idxs)}) after filtering; relaxing min_sep")
+        min_sep_relaxed = min_sep * 0.5
+        keep_query_global_idxs = [gidx for gidx in candidate_query_idxs if (gidx in q_map and q_map[gidx] >= min_sep_relaxed)]
+        final_query_idxs = sorted(keep_query_global_idxs)
+        final_db_idxs = sorted(list(set(range(len(all_entries))) - set(final_query_idxs)))
+
+    params = {'median_dist': median_dist, 'min_sep': min_sep, 'min_sep_factor': min_sep_factor}
+    return final_query_idxs, final_db_idxs, params
+
+
+def cluster_selection(all_entries, k_clusters=150):
+    # cluster on database XY, then for each cluster choose closest query (if any)
+    candidate_query_idxs = [e['idx'] for e in all_entries if e['idx'] % 3 == 0]
+    candidate_db_idxs = [e['idx'] for e in all_entries if e['idx'] % 3 != 0]
+
+    db_with_pos = [(i, float(all_entries[i]['pose'][0]), float(all_entries[i]['pose'][1]))
+                   for i in candidate_db_idxs if all_entries[i]['pose'] is not None]
+    q_with_pos = [(i, float(all_entries[i]['pose'][0]), float(all_entries[i]['pose'][1]))
+                  for i in candidate_query_idxs if all_entries[i]['pose'] is not None]
+
+    if len(db_with_pos) == 0:
+        print('[WARN] No pos for DB - fallback to simple selection')
+        return simple_selection(all_entries)
+
+    db_xy = np.array([[p[1], p[2]] for p in db_with_pos])
+    q_xy = np.array([[p[1], p[2]] for p in q_with_pos]) if len(q_with_pos) > 0 else np.zeros((0,2))
+    db_idx_map = [p[0] for p in db_with_pos]
+    q_idx_map = [p[0] for p in q_with_pos]
+
+    # cluster db
+    k = min(k_clusters, len(db_xy))
+    kmeans = KMeans(n_clusters=k, random_state=0).fit(db_xy)
+    centers = kmeans.cluster_centers_
+
+    final_query_idxs = set()
+    if q_xy.shape[0] > 0:
+        closest_idx_to_center, _ = pairwise_distances_argmin_min(centers, q_xy)
+        for qi in closest_idx_to_center:
+            final_query_idxs.add(q_idx_map[int(qi)])
+
+    final_db_idxs = sorted(list(set(range(len(all_entries))) - final_query_idxs))
+    params = {'k_clusters': k}
+    return sorted(list(final_query_idxs)), final_db_idxs, params
+
+
+def kcenter_selection(all_entries, queries_feats_path, kcenter_k=150):
+    # requires numpy .npy file with queries features in the order of candidate queries
+    candidate_query_idxs = [e['idx'] for e in all_entries if e['idx'] % 3 == 0]
+    if not os.path.isfile(queries_feats_path):
+        raise FileNotFoundError(f"queries_feats not found: {queries_feats_path}")
+    feats = np.load(queries_feats_path)  # shape [Qcand, D]
+    if feats.shape[0] != len(candidate_query_idxs):
+        print(f"[WARN] queries_feats rows ({feats.shape[0]}) != candidate_query count ({len(candidate_query_idxs)})")
+
+    # k-center greedy on candidate queries features
+    N = feats.shape[0]
+    k = min(kcenter_k, N)
+    centers = [0]
+    dist = np.linalg.norm(feats - feats[0:1], axis=1)
+    for _ in range(1, k):
+        idx = int(np.argmax(dist))
+        centers.append(idx)
+        newd = np.linalg.norm(feats - feats[idx:idx+1], axis=1)
+        dist = np.minimum(dist, newd)
+
+    selected_query_global_idxs = [candidate_query_idxs[i] for i in centers]
+    final_query_idxs = sorted(selected_query_global_idxs)
+    final_db_idxs = sorted(list(set(range(len(all_entries))) - set(final_query_idxs)))
+    params = {'kcenter_k': kcenter_k, 'selected_k': len(final_query_idxs), 'queries_feats_path': queries_feats_path}
+    return final_query_idxs, final_db_idxs, params
+
+
+def save_split_metadata(output_dir, map_dir, final_query_idxs, final_db_idxs, all_entries, params):
+    splits = {
+        'map_dir': map_dir,
+        'num_total': len(all_entries),
+        'num_queries': len(final_query_idxs),
+        'num_database': len(final_db_idxs),
+        'queries': [all_entries[i]['out_filename'] for i in final_query_idxs],
+        'database': [all_entries[i]['out_filename'] for i in final_db_idxs],
+        'params': params
+    }
+    out_path = os.path.join(output_dir, 'splits.json')
+    with open(out_path, 'w', encoding='utf-8') as fh:
+        json.dump(splits, fh, indent=2, ensure_ascii=False)
+    print(f"[INFO] splits metadata saved to {out_path}")
+
+def main():
+    args = parse_args()
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    # build edge labels map once
+    edge_label2idx = build_label_maps(args.root_dir)
+
+    # expected explicit mapping (user-provided order)
+    # train: db = map1, queries = map2..map7
+    # test:  db = map1, queries = map8
+    train_db_map = 'map1'
+    train_query_maps = [f"map{i}" for i in range(2, 8)]  # map2..map7
+    test_db_map = 'map1'
+    test_query_maps = ['map8']
+
+    # discover maps present under root_dir
+    existing_maps = {d for d in os.listdir(args.root_dir) if os.path.isdir(os.path.join(args.root_dir, d)) and re.match(r'^map\d+$', d)}
+    print(f"[INFO] maps found under root_dir: {sorted(existing_maps)}")
+
+    # helper to validate maps
+    def ensure_map_exists(map_name):
+        if map_name not in existing_maps:
+            raise RuntimeError(f"Expected map directory '{map_name}' not found under {args.root_dir}")
+
+    # validate required maps exist (give informative error)
+    required_maps = set([train_db_map] + train_query_maps + test_query_maps)
+    missing = required_maps - existing_maps
+    if missing:
+        print(f"[WARN] Some expected maps are missing: {sorted(list(missing))}. The script will process only existing ones.")
+
+    # prepare output directories
+    train_db_dir = os.path.join(args.output_dir, 'train', 'database')
+    train_q_dir = os.path.join(args.output_dir, 'train', 'queries')
+    test_db_dir = os.path.join(args.output_dir, 'test', 'database')
+    test_q_dir = os.path.join(args.output_dir, 'test', 'queries')
+    for d in (train_db_dir, train_q_dir, test_db_dir, test_q_dir):
+        os.makedirs(d, exist_ok=True)
+
+    # small helper to process one map: convert all jsons and save as either db or queries or both
+    def process_map_full(map_name, save_as_db=False, save_as_queries=False, dest_db_dir=None, dest_q_dir=None):
+        if map_name not in existing_maps:
+            print(f"[SKIP] map {map_name} not present under root_dir")
+            return
+
+        graphs_dir = os.path.join(args.root_dir, map_name, 'graphs')
+        poses_path = os.path.join(args.root_dir, map_name, 'poses.csv')
+        poses_df = None
+        if os.path.isfile(poses_path):
+            try:
+                poses_df = pd.read_csv(poses_path)
+            except Exception as e:
+                print(f"[WARN] failed to read poses.csv for {map_name}: {e}; proceeding with default poses")
+                poses_df = None
+        else:
+            print(f"[INFO] no poses.csv for {map_name} -> using default [0,0,0] poses")
+
+        json_files = collect_json_files(graphs_dir)
+        if len(json_files) == 0:
+            print(f"[WARN] no json graph files found in {graphs_dir}")
+            return
+
+        all_entries = gather_all_entries(json_files, int(re.search(r'\d+', map_name).group()), poses_df if poses_df is not None else pd.DataFrame())
+
+        def save_entry_as_pt_local(entry):
+            src_json = entry['json_path']
+            out_fn = entry['out_filename']
+            # compute a stable pose vector (3 floats). If poses_df missing, fallback to zeros.
+            try:
+                frame_id = int(entry['file_stem'])
+                if poses_df is not None and not poses_df.empty:
+                    poses = get_position(poses_df, frame_id, int(re.search(r'\d+', map_name).group()))
+                else:
+                    poses = [0.0, 0.0, 0.0]
+            except Exception:
+                poses = [0.0, 0.0, 0.0]
+            # save to destination(s)
+            if save_as_db and dest_db_dir is not None:
+                dest_path = os.path.join(dest_db_dir, out_fn)
+                if os.path.exists(dest_path) and not args.force_overwrite:
+                    print(f"[SKIP] {dest_path} exists (use --force_overwrite to overwrite)")
+                else:
+                    try:
+                        convert_one(src_json, poses, dest_path, edge_label2idx)
+                    except Exception as e:
+                        print(f"[ERROR] convert_one failed for {src_json} -> {dest_path}: {e}")
+            if save_as_queries and dest_q_dir is not None:
+                dest_path = os.path.join(dest_q_dir, out_fn)
+                if os.path.exists(dest_path) and not args.force_overwrite:
+                    print(f"[SKIP] {dest_path} exists (use --force_overwrite to overwrite)")
+                else:
+                    try:
+                        convert_one(src_json, poses, dest_path, edge_label2idx)
+                    except Exception as e:
+                        print(f"[ERROR] convert_one failed for {src_json} -> {dest_path}: {e}")
+
+        # iterate entries and save
+        for entry in all_entries:
+            save_entry_as_pt_local(entry)
+
+        print(f"[INFO] processed map {map_name}: saved to DB? {save_as_db} Q? {save_as_queries}")
+
+    # --- Build train split: db = map1, queries = map2..map7 ---
+    if train_db_map in existing_maps:
+        # process map1 as database for train
+        process_map_full(train_db_map, save_as_db=True, save_as_queries=False, dest_db_dir=train_db_dir, dest_q_dir=None)
+    else:
+        print(f"[WARN] train DB map {train_db_map} not present -> train database will be empty")
+
+    for m in train_query_maps:
+        if m in existing_maps:
+            process_map_full(m, save_as_db=False, save_as_queries=True, dest_db_dir=None, dest_q_dir=train_q_dir)
+        else:
+            print(f"[INFO] train query map {m} not present -> skipping")
+
+    # --- Build test split: db = map1, queries = map8 ---
+    # reuse map1 as test database as well (convert again or skip if already present)
+    if test_db_map in existing_maps:
+        process_map_full(test_db_map, save_as_db=True, save_as_queries=False, dest_db_dir=test_db_dir, dest_q_dir=None)
+    else:
+        print(f"[WARN] test DB map {test_db_map} not present -> test database will be empty")
+
+    for m in test_query_maps:
+        if m in existing_maps:
+            process_map_full(m, save_as_db=False, save_as_queries=True, dest_db_dir=None, dest_q_dir=test_q_dir)
+        else:
+            print(f"[INFO] test query map {m} not present -> skipping")
+
+    # final summary
+    def summary_counts(dir_path):
+        return len(glob.glob(os.path.join(dir_path, '*.pt')))
+    print(f"[DONE] train DB: {summary_counts(train_db_dir)}, train Q: {summary_counts(train_q_dir)}, "
+          f"test DB: {summary_counts(test_db_dir)}, test Q: {summary_counts(test_q_dir)})")
+
+if __name__ == '__main__':
+    main()
