@@ -4,7 +4,7 @@
 ### 1. Clone the repository
 
 ```bash
-git clone <repo-url>
+gh repo clone MrPaganiniFeeD/Scene_graph_localization
 cd Scene_graph_localization
 
 ```
