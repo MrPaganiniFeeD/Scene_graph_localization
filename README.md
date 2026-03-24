@@ -64,7 +64,7 @@ datasets_folder/
 Run `train.py`:
 
 ```bash
-python src/train.py \
+python train.py \
     --datasets_folder /path/to/datasets \
     --dataset_name 3RScan \
     --mode image \
