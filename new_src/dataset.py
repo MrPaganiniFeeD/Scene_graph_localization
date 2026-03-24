@@ -24,6 +24,7 @@ base_transform = transforms.Compose([
 ])
 
 
+
 def path_to_pil_img(path):
     return Image.open(path).convert("RGB")
 
@@ -37,8 +38,6 @@ def load_json(path):
         print("Файл не найден")
     except json.JSONDecodeError as e:
         print(f"Ошибка в формате JSON: {e}")
-
-
 
 
 def collate_fn(batch):
@@ -92,7 +91,12 @@ class BaseDataset(data.Dataset):
     def __init__(self, args, datasets_folder="datasets", dataset_name="3RScan", split="train"):
         super().__init__()
         self.args = args
-        self.modalites = getattr(args, 'modalites', ['image', 'graph', 'pose'])
+        self.modalities = tuple(
+            getattr(args, "modalities", getattr(args, "modalities", ["image", "graph", "pose"]))
+        )
+        self.use_images = "image" in self.modalities
+        self.use_graphs = "graph" in self.modalities
+        self.resize = getattr(args, "resize", None)
         self.dataset_name = dataset_name
         self.dataset_folder = join(datasets_folder, dataset_name)
         if not os.path.exists(self.dataset_folder):
@@ -130,6 +134,30 @@ class BaseDataset(data.Dataset):
                 self.transforms[scan_name] = mat
         print("SCAN LEN", len(self.scan_to_ref))
 
+
+        if self.resize is not None:
+            self.resized_transform = transforms.Compose([
+                transforms.Resize(self.resize),
+                base_transform
+            ])
+        else:
+            self.resized_transform = base_transform
+
+        identity_transform = transforms.Lambda(lambda x: x)
+
+        q_transforms = [
+            transforms.ColorJitter(brightness=args.brightness) if getattr(args, "brightness", None) is not None else identity_transform,
+            transforms.ColorJitter(contrast=args.contrast) if getattr(args, "contrast", None) is not None else identity_transform,
+            transforms.ColorJitter(saturation=args.saturation) if getattr(args, "saturation", None) is not None else identity_transform,
+            transforms.ColorJitter(hue=args.hue) if getattr(args, "hue", None) is not None else identity_transform,
+            transforms.RandomPerspective(args.rand_perspective) if getattr(args, "rand_perspective", None) is not None else identity_transform,
+            transforms.RandomResizedCrop(size=self.resize, scale=(1 - args.random_resized_crop, 1))
+            if getattr(args, "random_resized_crop", None) is not None and self.resize is not None else identity_transform,
+            transforms.RandomRotation(degrees=args.random_rotation) if getattr(args, "random_rotation", None) is not None else identity_transform,
+            self.resized_transform,
+        ]
+
+        self.query_transform = transforms.Compose(q_transforms)
         # загружаем метаданные конкретного датасета (3RScan)
         if dataset_name == "3RScan":
             if split == 'train':
@@ -189,6 +217,8 @@ class BaseDataset(data.Dataset):
                             self.queries_items.extend(q_items)
                 """
 
+        self.database_num = len(self.database_items)
+        self.queries_num = len(self.queries_items)
         self.items = self.database_items + self.queries_items
         
         self.soft_positives_per_query = self._build_soft_positives(radius=1)  # радиус в метрах
@@ -198,20 +228,20 @@ class BaseDataset(data.Dataset):
     def _list_scene_files(self, scene_name):
         """
         Вернёт словарь списков путей для запрошенных модальностей.
-        keys: 'images', 'poses', 'graphs' (в зависимости от modalites)
+        keys: 'images', 'poses', 'graphs' (в зависимости от modalities)
         """
         files = {}
         scene_graph_path = join(self.dataset_folder, "Splited_graphs", scene_name)
         scene_image_path = join(self.dataset_folder, 'scenes', scene_name, 'sequence')
 
-        if 'image' in self.modalites:
+        if 'image' in self.modalities:
             files['images'] = sorted([
                 p for p in glob(join(scene_image_path, "**", "frame-*.color.jpg"), recursive=True)
                 if '.rendered.' not in p
             ])
-        if 'pose' in self.modalites:
+        if 'pose' in self.modalities:
             files['poses'] = sorted(glob(join(scene_image_path, "**", "*.pose.txt"), recursive=True))
-        if 'graph' in self.modalites:
+        if 'graph' in self.modalities:
             files['graphs'] = sorted(glob(join(scene_graph_path, "**", "*.pt"), recursive=True))
 
         return files
@@ -297,7 +327,7 @@ class BaseDataset(data.Dataset):
                 lines.append(f"  - {name}: missing keys w.r.t. union: {_show(missing)}")
 
         lines.append("")
-        lines.append(f"Активные модальности: {self.modalites}")
+        lines.append(f"Активные модальности: {self.modalities}")
 
         msg = "\n".join(lines)
         # логируем/печатаем и возвращаем False — сцена будет пропущена
@@ -370,6 +400,52 @@ class BaseDataset(data.Dataset):
     def __len__(self):
         return len(self.items)
 
+
+    def _load_graph(self, graph_path):
+        if graph_path is None:
+            return None
+        graph = torch.load(graph_path, map_location="cpu")
+        return graph
+
+    def _build_item_sample(self, item, is_query=False, with_meta=True, apply_image_transform=False):
+        sample = {}
+
+        if with_meta:
+            sample["scene"] = item.get("scene")
+            sample["pose"] = item.get("pose")
+            sample["img_path"] = item.get("img")
+            sample["graph_path"] = item.get("graph")
+
+        if self.use_images:
+            img_path = item.get("img")
+            if img_path is not None:
+                img = path_to_pil_img(img_path)
+                img = base_transform(img)
+                if apply_image_transform:
+                    img = self.query_transform(img) if is_query else self.resized_transform(img)
+                sample["image"] = img
+            else:
+                sample["image"] = None
+
+        if self.use_graphs:
+            graph_path = item.get("graph")
+            sample["graph"] = self._load_graph(graph_path) if graph_path is not None else None
+            if sample['graph'] is not None:
+                graph = sample['graph']
+                #Rotated
+                new_x = torch.stack([1 - graph['x'][:, 1], graph['x'][:, 0], graph['x'][:, 3], graph['x'][:, 2]], dim=1)
+                graph['x'] = new_x
+                sample["graph"] = graph
+        else:
+            sample["graph"] = None
+
+        return sample
+
+    def __getitem__(self, index):
+        item = self.items[index]
+        is_query = index >= self.database_num
+        return self._build_item_sample(item, is_query=is_query, with_meta=True)
+    '''
     def __getitem__(self, index):
         item = self.items[index]
 
@@ -383,14 +459,16 @@ class BaseDataset(data.Dataset):
 
         if item.get("img") is not None:
             img = path_to_pil_img(item["img"])
-            img_rotated_cw = img.transpose(Image.ROTATE_270)
-            sample["image"] = base_transform(img_rotated_cw)
+            sample["image"] = base_transform(img)
 
         if item.get("graph") is not None:
-            sample["graph"] = torch.load(item["graph"], map_location="cpu")
+            graph = torch.load(item["graph"], map_location="cpu")
+            new_x = torch.stack([1 - graph['x'][:, 1], graph['x'][:, 0], graph['x'][:, 3], graph['x'][:, 2]], dim=1)
+            graph['x'] = new_x
+            sample["graph"] = graph
 
         return sample
-
+    '''
     # ----------------- оставляем твои полезные методы -----------------
 
     def _build_soft_positives(self, radius=5.0):
@@ -510,20 +588,6 @@ from functools import partial
 from torch_geometric.data import Data, HeteroData, Batch as PyGBatch
 import logging
 
-
-# ---------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------
-
-def _load_graph_file(graph_path):
-    if graph_path is None:
-        return None
-    try:
-        return torch.load(graph_path, map_location="cpu", weights_only=False)
-    except TypeError:
-        return torch.load(graph_path, map_location="cpu")
-
-from torch_geometric.data import Batch
 
 def _graph_to_list(g):
     if g is None:
@@ -1211,12 +1275,6 @@ class TripletsDataset(BaseDataset):
         self.train_positives_dist_threshold = getattr(args, "train_positives_dist_threshold", 10.0)
         self.soft_positives_radius = getattr(args, "soft_positives_radius", 1.0)
 
-        self.modalities = tuple(
-            getattr(args, "modalities", getattr(args, "modalites", ["image", "graph"]))
-        )
-        self.use_images = "image" in self.modalities
-        self.use_graphs = "graph" in self.modalities
-
         identity_transform = transforms.Lambda(lambda x: x)
 
         if self.resize is not None:
@@ -1254,7 +1312,10 @@ class TripletsDataset(BaseDataset):
 
         self.triplets_global_indexes = torch.empty((0, 2 + self.negs_num_per_query), dtype=torch.long)
 
-
+        # msls_weighted support
+        self.weights = None
+        if self.mining == "msls_weighted":
+            self._build_msls_weights()
 
     # -----------------------------------------------------------------
     # Views / indexing
@@ -1288,39 +1349,6 @@ class TripletsDataset(BaseDataset):
         )
 
         self.items = self.database_items + self.queries_items
-
-    def _build_item_sample(self, item, is_query=False, with_meta=True):
-        """
-        Build a sample dict for one item.
-        The returned dict always contains image/graph keys (possibly None),
-        plus metadata if with_meta=True.
-        """
-        sample = {}
-
-        if with_meta:
-            sample["scene"] = item.get("scene")
-            sample["pose"] = item.get("pose")
-            sample["img_path"] = item.get("img")
-            sample["graph_path"] = item.get("graph")
-
-        if self.use_images:
-            img_path = item.get("img")
-            if img_path is not None:
-                img = path_to_pil_img(img_path)
-                img = self.query_transform(img) if is_query else self.resized_transform(img)
-                sample["image"] = img
-            else:
-                sample["image"] = None
-        else:
-            sample["image"] = None
-
-        if self.use_graphs:
-            graph_path = item.get("graph")
-            sample["graph"] = _load_graph_file(graph_path) if graph_path is not None else None
-        else:
-            sample["graph"] = None
-
-        return sample
 
 
     def _filter_queries_without_soft_positives(self):
@@ -1430,14 +1458,15 @@ class TripletsDataset(BaseDataset):
                 *[self._build_item_sample(it, is_query=False, with_meta=False)["image"] for it in items[2:]]
             ]
             sample["image"] = torch.stack(images, dim=0)
+            
         else:
             sample["image"] = None
 
         if self.use_graphs:
             graphs = [
-                self._build_item_sample(items[0], is_query=True, with_meta=False)["graph"],
-                self._build_item_sample(items[1], is_query=False, with_meta=False)["graph"],
-                *[self._build_item_sample(it, is_query=False, with_meta=False)["graph"] for it in items[2:]]
+                self._build_item_sample(items[0], is_query=True, with_meta=True)["graph"],
+                self._build_item_sample(items[1], is_query=False, with_meta=True)["graph"],
+                *[self._build_item_sample(it, is_query=False, with_meta=True)["graph"] for it in items[2:]]
             ]
             sample["graph"] = graphs
         else:
