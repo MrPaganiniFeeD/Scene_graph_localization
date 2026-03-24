@@ -2,7 +2,7 @@
 ## Installation
 
 ### 1. Clone the repository
-``
+
 ```bash
 git clone <repo-url>
 cd Scene_graph_localization
@@ -11,7 +11,7 @@ cd Scene_graph_localization
 
 ### 2. Create and activate virtual environment
 
-bash
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate   # On Linux/Mac
@@ -23,9 +23,6 @@ source .venv/bin/activate   # On Linux/Mac
 ```bash
 pip install -r requirements.txt
 ```
-
-
----
 
 ## Data Preparation
 
