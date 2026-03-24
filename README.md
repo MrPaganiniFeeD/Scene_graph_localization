@@ -87,12 +87,6 @@ Each item in the dataset is stored as a Python dictionary:
 }
 ```
 
-This is produced by:
-
-```python
-make_item(img_path, graph_path=None, scene=None, pose=None)
-```
-
 In practice, `BaseDataset` builds these items from file lists on disk.
 
 ---
