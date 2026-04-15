@@ -7,13 +7,19 @@ import numpy as np
 from os.path import join
 from sklearn.decomposition import PCA
 import datasets_ws
+import yaml
 
 
 def save_checkpoint(args, state, is_best, filename):
     model_path = join(args.save_dir, filename)
+    save_args_yaml(args, args.save_dir)
     torch.save(state, model_path)
     if is_best:
         shutil.copyfile(model_path, join(args.save_dir, "best_model.pth"))
+
+def save_args_yaml(args, save_dir):
+    with open(os.path.join(save_dir, 'args.yaml'), 'w') as f:
+        yaml.dump(vars(args), f, default_flow_style=False)
 
 
 def resume_train(args, model, optimizer=None, strict=False):
