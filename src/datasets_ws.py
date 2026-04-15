@@ -1098,26 +1098,19 @@ class TripletsDataset(BaseDataset):
         query_scene = query_item["scene"]
         query_ref = self.scan_to_ref.get(query_scene, query_scene)
 
-        # Все чужие референсы (уже есть предварительно построенный self.ref_to_db_indices)
         foreign_refs = [ref for ref in self.ref_to_db_indices if ref != query_ref]
         if not foreign_refs:
             raise RuntimeError(f"No foreign reference scenes found for query ref='{query_ref}'")
 
-        # Если чужих референсов меньше, чем нужно негативов, выбираем с повторением (replace=True)
-        # Либо можно сначала взять все уникальные, а потом добить случайными (как ниже)
         if len(foreign_refs) < num_negatives:
-            # Берём все уникальные референсы (без повторений), а затем добираем недостающие
-            # (можно также просто включить replace=True, но тогда могут быть повторы референсов)
             chosen_refs = np.random.choice(foreign_refs, size=num_negatives, replace=True)
         else:
             chosen_refs = np.random.choice(foreign_refs, size=num_negatives, replace=False)
 
-        # Теперь для каждого выбранного референса берём один случайный db_index
         neg_indexes = []
         for ref in chosen_refs:
-            candidates = self.ref_to_db_indices[ref]   # список индексов для этого ref
-            # candidates не должен быть пустым, так как ref_to_db_indices строится только из существующих
-            neg = np.random.choice(candidates, size=1)[0]   # берём один элемент
+            candidates = self.ref_to_db_indices[ref]
+            neg = np.random.choice(candidates, size=1)[0]
             neg_indexes.append(neg)
 
         return np.array(neg_indexes, dtype=np.int32)
