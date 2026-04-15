@@ -1,5 +1,6 @@
 import json
 import logging
+import csv
 import math
 import os
 from glob import glob
@@ -9,6 +10,7 @@ import faiss
 import numpy as np
 import torch
 import torch.utils.data as data
+from pathlib import Path
 import torchvision.transforms as transforms
 from PIL import Image
 from scipy.spatial import KDTree
@@ -537,6 +539,7 @@ def collate_fn(batch, feat_dim=4):
     if isinstance(first, dict):
         return _collate_samples(batch, feat_dim=feat_dim)
 
+
     samples, triplets_local_indexes, triplets_global_indexes = zip(*batch)
     batch_samples = _collate_samples(list(samples), feat_dim=feat_dim)
 
@@ -666,8 +669,8 @@ class SampleLoader:
 
         img = self._rotate_pil_clockwise_90(pil_img)
 
-        if is_query and self.query_aug is not None:
-            img = self.query_aug(img)
+        #if is_query and self.query_aug is not None:
+        #    img = self.query_aug(img)
 
         img = self._final_image_transform(img)
         return img
@@ -766,7 +769,7 @@ class BaseDataset(data.Dataset):
 
         # scene metadata
         meta_data = join(self.dataset_folder, "files")
-        scene_data_path = join(meta_data, "3RScan_small.json")
+        scene_data_path = join(meta_data, "3RScan.json")
         scene_data = load_json(scene_data_path) or []
 
         # mappings
@@ -798,9 +801,9 @@ class BaseDataset(data.Dataset):
         # split files
         if dataset_name == "3RScan":
             if split == "train":
-                split_scans_path = join(meta_data, "train_scans_small.txt")
+                split_scans_path = join(meta_data, "train_scans.txt")
             elif split == "test":
-                split_scans_path = join(meta_data, "test_resplit_scans_small.txt")
+                split_scans_path = join(meta_data, "test_resplit_scans.txt")
             else:
                 split_scans_path = join(meta_data, f"{split}_scans.txt")
 
@@ -828,16 +831,31 @@ class BaseDataset(data.Dataset):
                     else:
                         print(f"[SKIP] query scene '{query_scene}' due to modality mismatch.")
 
+            self.ref_to_db_indices = {}
+            for idx, item in enumerate(self.database_items):
+                ref = self.scan_to_ref.get(item["scene"], item["scene"])
+                self.ref_to_db_indices.setdefault(ref, []).append(idx)
+
         self.database_num = len(self.database_items)
         self.queries_num = len(self.queries_items)
         self.items = self.database_items + self.queries_items
 
-        self.soft_positives_per_query = self._build_soft_positives(radius=1.0)
+        # self.soft_positives_per_query = self._build_soft_positives(radius=3.0)
+        self.soft_positives_per_query = []
+
+        """
+        q = self.items[61878]
+        print("scene:", q["scene"])
+        print("ref:", self.scan_to_ref.get(q["scene"], q["scene"]))
+        print("pose:", q["pose"])
+        print("soft positives count:", len(self.soft_positives_per_query[61878]))
+        print("soft positives:", self.soft_positives_per_query[61878][:20])
+        """
 
 
     def _list_scene_files(self, scene_name):
         files = {}
-        scene_graph_path = join(self.dataset_folder, "Splited_graphs", scene_name)
+        scene_graph_path = join(self.dataset_folder, "SceneGraphs_real_classes_pt", scene_name)
         scene_image_path = join(self.dataset_folder, "scenes", scene_name, "sequence")
 
         if "image" in self.modalities:
@@ -1034,18 +1052,15 @@ class TripletsDataset(BaseDataset):
         self.negs_num_per_query = negs_num_per_query
         self.is_inference = False
 
-        self.soft_positives_radius = getattr(args, "soft_positives_radius", 1.0)
-        self.train_positives_dist_threshold = getattr(args, "train_positives_dist_threshold", 10.0)
+        self.soft_positives_radius = getattr(args, "soft_positives_radius", 0.1)
+        #self.train_positives_dist_threshold = getattr(args, "train_positives_dist_threshold", 10.0)
 
-        self._filter_queries_without_soft_positives()
         self.soft_positives_per_query = self._build_soft_positives(radius=self.soft_positives_radius)
+        self._filter_queries_without_soft_positives()
 
         self.triplets_global_indexes = torch.empty((0, 2 + self.negs_num_per_query), dtype=torch.long)
         self.neg_cache = [np.empty((0,), dtype=np.int32) for _ in range(self.queries_num)] if self.mining == "full" else None
 
-        self.weights = None
-        if self.mining == "msls_weighted":
-            self._build_msls_weights()
 
     # -------- views / filtering --------
 
@@ -1083,28 +1098,29 @@ class TripletsDataset(BaseDataset):
         query_scene = query_item["scene"]
         query_ref = self.scan_to_ref.get(query_scene, query_scene)
 
-        other_refs = [ref for ref in self.ref_to_scans.keys() if ref != query_ref]
-        if len(other_refs) == 0:
+        # Все чужие референсы (уже есть предварительно построенный self.ref_to_db_indices)
+        foreign_refs = [ref for ref in self.ref_to_db_indices if ref != query_ref]
+        if not foreign_refs:
             raise RuntimeError(f"No foreign reference scenes found for query ref='{query_ref}'")
 
-        for _ in range(50):
-            chosen_ref = np.random.choice(other_refs)
-            candidate_db_indexes = [
-                db_idx
-                for db_idx, db_item in enumerate(self.database_items)
-                if self.scan_to_ref.get(db_item["scene"], db_item["scene"]) == chosen_ref
-            ]
+        # Если чужих референсов меньше, чем нужно негативов, выбираем с повторением (replace=True)
+        # Либо можно сначала взять все уникальные, а потом добить случайными (как ниже)
+        if len(foreign_refs) < num_negatives:
+            # Берём все уникальные референсы (без повторений), а затем добираем недостающие
+            # (можно также просто включить replace=True, но тогда могут быть повторы референсов)
+            chosen_refs = np.random.choice(foreign_refs, size=num_negatives, replace=True)
+        else:
+            chosen_refs = np.random.choice(foreign_refs, size=num_negatives, replace=False)
 
-            if len(candidate_db_indexes) == 0:
-                continue
+        # Теперь для каждого выбранного референса берём один случайный db_index
+        neg_indexes = []
+        for ref in chosen_refs:
+            candidates = self.ref_to_db_indices[ref]   # список индексов для этого ref
+            # candidates не должен быть пустым, так как ref_to_db_indices строится только из существующих
+            neg = np.random.choice(candidates, size=1)[0]   # берём один элемент
+            neg_indexes.append(neg)
 
-            replace = len(candidate_db_indexes) < num_negatives
-            neg_indexes = np.random.choice(candidate_db_indexes, size=num_negatives, replace=replace).astype(np.int32)
-            return neg_indexes
-
-        raise RuntimeError(
-            f"Could not sample negatives for query_index={query_index} because no non-empty foreign reference scene was found."
-        )
+        return np.array(neg_indexes, dtype=np.int32)
 
     # -------- dataset API --------
 
@@ -1237,7 +1253,9 @@ class TripletsDataset(BaseDataset):
             collate_fn=collate_fn,
         )
 
-        model = model.eval()
+        if model is not None:
+            model = model.eval()
+
 
         cache = TripletsDataset._empty_cache(cache_shape)
 
@@ -1246,22 +1264,28 @@ class TripletsDataset(BaseDataset):
             subset_indices = getattr(subset_ds, "indices", None)
 
             for batch in subset_dl:
-                batch = TripletsDataset._move_to_device(batch, args.device)
+                #batch = TripletsDataset._move_to_device(batch, args.device)
                 model_input = batch
-                if isinstance(batch, dict):
-                    model_input = TripletsDataset._move_to_device(subset_ds.dataset._prepare_model_input(batch) if hasattr(subset_ds, "dataset") and hasattr(subset_ds.dataset, "_prepare_model_input") else batch, args.device)
+                #if isinstance(batch, dict):
+                #    model_input = TripletsDataset._move_to_device(subset_ds.dataset._prepare_model_input(batch) if hasattr(subset_ds, "dataset") and hasattr(subset_ds.dataset, "_prepare_model_input") else batch, args.device)
+                if model_input["graph"] is not None:
+                    batch_graph = model_input["graph"].to(args.device)
+                else:
+                    batch_graph = None
+                if model_input['image'] is not None:
+                    batch_image = model_input["image"].to(args.device)
+                else:
+                    batch_image = None
 
-                batch_graph = model_input["graph"].to(args.device)
-                batch_image = model_input["image"].to(args.device)
-
-                outputs = model(
-                    graph=batch_graph,
-                    image=batch_image,
-                    mode=args.mode,   # "graph" / "fusion"
-                    return_parts=True,
-                )
-
-                global_features = outputs["fused"]
+                global_features = 0
+                if model is not None:
+                    outputs = model(
+                        graph=batch_graph,
+                        image=batch_image,
+                        mode=args.mode,   # "graph" / "fusion" / "image"
+                        return_parts=True,
+                    )
+                    global_features = outputs["fused"]
 
                 if global_features is None:
                     raise RuntimeError("Model must return global features for cache computation.")
@@ -1402,3 +1426,318 @@ class TripletsDataset(BaseDataset):
 
         self.triplets_global_indexes = torch.tensor(self.triplets_global_indexes, dtype=torch.long)
 
+
+    def _tensor_info(self, x):
+        if x is None:
+            return "None"
+        if not torch.is_tensor(x):
+            return f"{type(x).__name__}"
+        return f"shape={tuple(x.shape)}, dtype={x.dtype}, device={x.device}"
+
+    def _safe_unique(self, x):
+        if x is None or not torch.is_tensor(x) or x.numel() == 0:
+            return []
+        x = x.detach().cpu().view(-1)
+        return x.unique(sorted=True).tolist()
+
+    def _graph_report(self, graph, name="graph"):
+        """
+        Returns a dict with debug stats for one PyG graph.
+        Works with torch_geometric.data.Data / HeteroData-like objects.
+        """
+        rep = {
+            "name": name,
+            "type": type(graph).__name__,
+            "is_none": graph is None,
+        }
+
+        if graph is None:
+            return rep
+
+        x = getattr(graph, "x", None)
+        edge_index = getattr(graph, "edge_index", None)
+        edge_attr = getattr(graph, "edge_attr", None)
+        node_class = getattr(graph, "node_class", None)
+        edge_label = getattr(graph, "edge_label", None)
+        edge_u_class = getattr(graph, "edge_u_class", None)
+        edge_v_class = getattr(graph, "edge_v_class", None)
+
+        rep["x"] = self._tensor_info(x)
+        rep["edge_index"] = self._tensor_info(edge_index)
+        rep["edge_attr"] = self._tensor_info(edge_attr)
+        rep["node_class"] = self._tensor_info(node_class)
+        rep["edge_label"] = self._tensor_info(edge_label)
+        rep["edge_u_class"] = self._tensor_info(edge_u_class)
+        rep["edge_v_class"] = self._tensor_info(edge_v_class)
+
+        # numeric stats
+        if torch.is_tensor(x):
+            x_cpu = x.detach().cpu()
+            rep["num_nodes"] = int(x_cpu.shape[0]) if x_cpu.ndim >= 1 else 0
+            rep["x_dim"] = int(x_cpu.shape[1]) if x_cpu.ndim == 2 else None
+            rep["x_nan"] = bool(torch.isnan(x_cpu).any().item())
+            rep["x_inf"] = bool(torch.isinf(x_cpu).any().item())
+            if x_cpu.ndim == 2 and x_cpu.numel() > 0:
+                rep["x_min"] = float(x_cpu.min().item())
+                rep["x_max"] = float(x_cpu.max().item())
+                rep["x_mean"] = float(x_cpu.mean().item())
+        else:
+            rep["num_nodes"] = None
+            rep["x_dim"] = None
+
+        if torch.is_tensor(edge_index):
+            ei = edge_index.detach().cpu()
+            rep["num_edges"] = int(ei.shape[1]) if ei.ndim == 2 else 0
+            rep["edge_index_nan"] = bool(torch.isnan(ei.float()).any().item())
+            rep["edge_index_inf"] = bool(torch.isinf(ei.float()).any().item())
+            if ei.ndim == 2 and ei.shape[0] == 2 and ei.shape[1] > 0:
+                rep["self_loops"] = int((ei[0] == ei[1]).sum().item())
+                if torch.is_tensor(x):
+                    n = x.shape[0]
+                    oob = ((ei[0] < 0) | (ei[0] >= n) | (ei[1] < 0) | (ei[1] >= n)).sum().item()
+                    rep["out_of_bounds_edges"] = int(oob)
+        else:
+            rep["num_edges"] = None
+
+        rep["node_class_unique"] = self._safe_unique(node_class)
+        rep["edge_label_unique"] = self._safe_unique(edge_label)
+        rep["edge_u_class_unique"] = self._safe_unique(edge_u_class)
+        rep["edge_v_class_unique"] = self._safe_unique(edge_v_class)
+
+        # heuristics / red flags
+        flags = []
+        if rep.get("num_nodes", 0) in [0, 1]:
+            flags.append("tiny_graph")
+        if rep.get("num_edges", 0) == 0:
+            flags.append("no_edges")
+        if rep.get("x_nan") or rep.get("x_inf"):
+            flags.append("bad_x_values")
+        if rep.get("edge_index_nan") or rep.get("edge_index_inf"):
+            flags.append("bad_edge_index")
+        if rep.get("out_of_bounds_edges", 0) > 0:
+            flags.append("oob_edges")
+        if rep.get("self_loops", 0) > 0:
+            flags.append("self_loops")
+        if len(rep["node_class_unique"]) <= 1:
+            flags.append("single_node_class")
+        if len(rep["edge_label_unique"]) == 0 and rep.get("num_edges", 0) > 0:
+            flags.append("edges_without_labels")
+
+        rep["flags"] = flags
+        return rep
+
+
+    def debug_triplets_graphs(self, n_triplets=10, triplet_indices=None, max_graphs_per_triplet=None, print_full=False):
+        """
+        Print a compact diagnostic report for triplets and their graphs.
+
+        Args:
+            n_triplets: how many triplets to inspect from the start (ignored if triplet_indices is given)
+            triplet_indices: optional explicit list of triplet dataset indices
+            max_graphs_per_triplet: if set, limits number of graphs printed per triplet
+            print_full: if True, prints all report fields; otherwise prints a compact summary
+
+        Returns:
+            A list of report dicts.
+        """
+        if not getattr(self, "use_graphs", False):
+            print("[debug_triplets_graphs] Graph modality is disabled.")
+            return []
+
+        if triplet_indices is None:
+            triplet_indices = list(range(min(n_triplets, len(self))))
+        else:
+            triplet_indices = list(triplet_indices)
+
+        reports = []
+
+        was_inference = getattr(self, "is_inference", False)
+        self.is_inference = False  # need training-mode __getitem__ to get triplets
+
+        for ds_idx in triplet_indices:
+            try:
+                sample, _, global_idx = self[ds_idx]
+            except Exception as e:
+                print(f"\n=== triplet[{ds_idx}] FAILED to load: {e} ===")
+                reports.append({
+                    "triplet_ds_index": ds_idx,
+                    "error": str(e),
+                })
+                continue
+
+            graphs = sample.get("graph", None)
+            if graphs is None:
+                print(f"\n=== triplet[{ds_idx}] has no graphs ===")
+                reports.append({
+                    "triplet_ds_index": ds_idx,
+                    "global_idx": global_idx.detach().cpu().tolist() if torch.is_tensor(global_idx) else global_idx,
+                    "graphs": None,
+                })
+                continue
+
+            if not isinstance(graphs, (list, tuple)):
+                graphs = [graphs]
+
+            if max_graphs_per_triplet is not None:
+                graphs = list(graphs)[:max_graphs_per_triplet]
+
+            triplet_report = {
+                "triplet_ds_index": ds_idx,
+                "global_idx": global_idx.detach().cpu().tolist() if torch.is_tensor(global_idx) else global_idx,
+                "graphs": [],
+            }
+
+            print(f"\n=== triplet[{ds_idx}] global={triplet_report['global_idx']} ===")
+            print(f"graphs in triplet: {len(graphs)}")
+
+            for gi, g in enumerate(graphs):
+                role = ["query", "positive"] + [f"negative_{k}" for k in range(max(0, len(graphs) - 2))]
+                role_name = role[gi] if gi < len(role) else f"graph_{gi}"
+
+                rep = self._graph_report(g, name=role_name)
+                triplet_report["graphs"].append(rep)
+
+                if print_full:
+                    print(f"\n[{role_name}] {rep}")
+                else:
+                    print(
+                        f"[{role_name}] "
+                        f"type={rep['type']} "
+                        f"nodes={rep.get('num_nodes')} "
+                        f"edges={rep.get('num_edges')} "
+                        f"x={rep.get('x')} "
+                        f"edge_label={rep.get('edge_label')} "
+                        f"flags={rep.get('flags')}"
+                    )
+
+            reports.append(triplet_report)
+
+        self.is_inference = was_inference
+        return reports
+
+    def export_triplets_graphs_report(
+        self,
+        save_dir,
+        max_triplets=None,
+        print_every=100,
+    ):
+        """
+        Сохраняет:
+        - report.json (полный)
+        - report.csv (сжатый)
+        """
+
+        save_dir = Path(save_dir)
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+        json_path = save_dir / "triplets_graph_report.json"
+        csv_path = save_dir / "triplets_graph_report.csv"
+
+        reports = []
+
+        was_inference = getattr(self, "is_inference", False)
+        self.is_inference = False
+
+        total = len(self) if max_triplets is None else min(len(self), max_triplets)
+
+        for idx in range(total):
+            if idx % print_every == 0:
+                print(f"[DEBUG] Processing triplet {idx}/{total}")
+
+            try:
+                sample, _, global_idx = self[idx]
+            except Exception as e:
+                reports.append({
+                    "triplet_idx": idx,
+                    "error": str(e),
+                })
+                continue
+
+            graphs = sample.get("graph", None)
+
+            triplet_entry = {
+                "triplet_idx": idx,
+                "global_idx": global_idx.tolist() if torch.is_tensor(global_idx) else global_idx,
+                "graphs": []
+            }
+
+            if graphs is None:
+                triplet_entry["graphs"] = None
+                reports.append(triplet_entry)
+                continue
+
+            if not isinstance(graphs, (list, tuple)):
+                graphs = [graphs]
+
+            for gi, g in enumerate(graphs):
+                role = "query" if gi == 0 else "positive" if gi == 1 else f"neg_{gi-2}"
+
+                rep = self._graph_report(g, name=role)
+                triplet_entry["graphs"].append(rep)
+
+            reports.append(triplet_entry)
+
+        self.is_inference = was_inference
+
+        # -----------------------
+        # SAVE JSON (FULL)
+        # -----------------------
+        with open(json_path, "w") as f:
+            json.dump(reports, f, indent=2)
+
+        print(f"[OK] JSON report saved to {json_path}")
+
+        # -----------------------
+        # SAVE CSV (COMPACT)
+        # -----------------------
+        csv_rows = []
+
+        for t in reports:
+            if "graphs" not in t or t["graphs"] is None:
+                csv_rows.append({
+                    "triplet_idx": t.get("triplet_idx"),
+                    "role": "none",
+                    "num_nodes": None,
+                    "num_edges": None,
+                    "flags": "no_graph"
+                })
+                continue
+
+            for g in t["graphs"]:
+                csv_rows.append({
+                    "triplet_idx": t["triplet_idx"],
+                    "role": g.get("name"),
+                    "num_nodes": g.get("num_nodes"),
+                    "num_edges": g.get("num_edges"),
+                    "x_dim": g.get("x_dim"),
+                    "x_min": g.get("x_min"),
+                    "x_max": g.get("x_max"),
+                    "flags": "|".join(g.get("flags", [])),
+                    "node_classes": len(g.get("node_class_unique", [])),
+                    "edge_classes": len(g.get("edge_label_unique", [])),
+                })
+
+        if len(csv_rows) > 0:
+            with open(csv_path, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=csv_rows[0].keys())
+                writer.writeheader()
+                writer.writerows(csv_rows)
+
+        print(f"[OK] CSV report saved to {csv_path}")
+
+        # -----------------------
+        # QUICK SUMMARY
+        # -----------------------
+        total_graphs = sum(len(t["graphs"]) for t in reports if t.get("graphs"))
+        empty_graphs = sum(
+            1 for t in reports for g in (t.get("graphs") or [])
+            if g.get("num_nodes", 0) <= 1
+        )
+
+        print("\n====== SUMMARY ======")
+        print(f"Triplets checked: {total}")
+        print(f"Graphs total: {total_graphs}")
+        print(f"Empty/tiny graphs: {empty_graphs}")
+        print(f"Ratio empty: {empty_graphs / max(total_graphs,1):.4f}")
+
+        return reports

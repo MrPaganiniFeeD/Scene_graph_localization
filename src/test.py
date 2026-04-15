@@ -24,31 +24,32 @@ def _extract_embeddings(model, loader, device, args):
     model.eval()
     all_embs = []
     all_scenes = []
+    with torch.no_grad():
+        for batch_samples in tqdm(loader, desc="Extract embeddings", ncols=100):      
+            graph = batch_samples.get("graph", None)
+            image = batch_samples.get("image", None)
 
-    for batch_samples in tqdm(loader, desc="Extract embeddings", ncols=100):
-        #print("TEST BATCH[0]", batch[0])        
-        graph = batch_samples.get("graph", None)
-        image = batch_samples.get("image", None)
+            if graph is not None:
+                graph = graph.to(device)
+            if image is not None:
+                image = image.to(device)
+            
+        
+            outputs = model(
+                graph=graph,
+                image=image,
+                mode=args.mode,
+                return_parts=True
+            )
+            
+            emb = outputs["fused"].detach().float().cpu()
 
-        if graph is not None:
-            graph = graph.to(device)
-        if image is not None:
-            image = image.to(device)
-        outputs = model(
-            graph=graph,
-            image=image,
-            mode=args.mode,
-            return_parts=True,
-        )
+            scenes = batch_samples["scene"]
+            if isinstance(scenes, str):
+                scenes = [scenes]
 
-        emb = outputs["fused"].detach().float().cpu()
-
-        scenes = batch_samples["scene"]
-        if isinstance(scenes, str):
-            scenes = [scenes]
-
-        all_embs.append(emb)
-        all_scenes.extend(list(scenes))
+            all_embs.append(emb)
+            all_scenes.extend(list(scenes))
 
     all_embs = torch.cat(all_embs, dim=0).numpy().astype(np.float32)
     return all_embs, all_scenes
