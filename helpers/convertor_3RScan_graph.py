@@ -1,29 +1,16 @@
-import os, json, glob, argparse
-import numpy as np
-import torch
-from features import iou2d_xyxy, aabb_iou_3d, angle_sin_cos
-import pandas as pd
-import re
-import math
+import json
+
+def load_json(path):
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data
+    except FileNotFoundError:
+        print("Файл не найден")
+    except json.JSONDecodeError as e:
+        print(f"Ошибка в формате JSON: {e}")
 
 
-from sklearn.neighbors import NearestNeighbors
-from sklearn.cluster import KMeans
-from sklearn.metrics import pairwise_distances_argmin_min
-from collections import Counter
-
-#root_dir = '/home/amelekhin96/pinkin_ek/data/sber'                     # корень с папками map1, map2, ...
-#output_dir = '/home/amelekhin96/pinkin_ek/data/graph/test' # общая папка для результатов
-
-#os.makedirs(output_dir, exist_ok=True)
-
-
-
-def load_json(p):
-    with open(p, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-        
 def build_links2idx(path_to_links_type):
     type2idx = {}
     idx = 0
@@ -35,27 +22,59 @@ def build_links2idx(path_to_links_type):
             
     return type2idx
 
-def get_position(df, frame_id, map_id):
-    px = df.loc[frame_id, 'px']
-    py = df.loc[frame_id, 'py']
-    pz = df.loc[frame_id, 'pz']
-    
-    if map_id == 1:
-        return px, py, pz
-    
-    idx = map_id - 2
-    if idx < 0 or idx >= len(Ts):
-        raise ValueError(f"map_id {map_id} не поддерживается. Допустимые значения: 1..{len(Ts)+1}")
-    
-    T = Ts[idx]
-    
-    point = np.array([px, py, pz, 1.0], dtype=np.float32)
-    
-    point_transformed = T @ point  # или np.dot(T, point)
-    
-    return point_transformed[0], point_transformed[1], point_transformed[2]
+
+import math
+import numpy as np
+
+EPS = 1e-8
+
+def iou2d_xyxy(a, b, eps=EPS):
+    ax1, ay1, ax2, ay2 = a
+    bx1, by1, bx2, by2 = b
+    max_x_left, max_y_left = max(ax1, bx1), max(ay1, by1)
+    min_x_right, min_y_right = min(ax2, bx2), min(ay2, by2)
+    iw = max(0, min_x_right - max_x_left)
+    ih = max(0, min_y_right - max_y_left)
+    inter = iw * ih
+    EPS = 1e-8
+
+def iou2d_xyxy(a, b, eps=EPS):
+    ax1, ay1, ax2, ay2 = a
+    bx1, by1, bx2, by2 = b
+    ix1 = max(ax1, bx1); iy1 = max(ay1, by1)
+    ix2 = min(ax2, bx2); iy2 = min(ay2, by2)
+    iw = max(0.0, ix2 - ix1); ih = max(0.0, iy2 - iy1)
+    inter = iw * ih
+    area_a = max(0.0, ax2 - ax1) * max(0.0, ay2 - ay1)
+    area_b = max(0.0, bx2 - bx1) * max(0.0, by2 - by1)
+    union = area_a + area_b - inter + eps
+    return float(inter / union)
+
+def aabb_iou_3d(min_a, max_a, min_b, max_b, eps=EPS):
+    min_a = np.array(min_a, dtype=float); max_a = np.array(max_a, dtype=float)
+    min_b = np.array(min_b, dtype=float); max_b = np.array(max_b, dtype=float)
+    inter_min = np.maximum(min_a, min_b)
+    inter_max = np.minimum(max_a, max_b)
+    inter_dims = np.maximum(0.0, inter_max - inter_min)
+    inter_vol = float(np.prod(inter_dims))
+    vol_a = float(np.prod(np.maximum(0.0, max_a - min_a)))
+    vol_b = float(np.prod(np.maximum(0.0, max_b - min_b)))
+    union = vol_a + vol_b - inter_vol + eps
+    return float(inter_vol / union)
 
 
+def angle_sin_cos(dx, dy):
+    theta = math.atan2(dy, dx)
+    return float(math.sin(theta)), float(math.cos(theta))
+
+
+def direction_bin(dx, dy, n_bins=8):
+    theta = math.atan2(dy, dx)
+    t = theta if theta >= 0 else (theta + 2*math.pi)
+    bin_idx = int(math.floor(t/(2*math.pi) * n_bins)) % n_bins
+    onehot = [0] * n_bins 
+    onehot[bin_idx] = 1
+    return onehot, bin_idx
 
 def convert_one(json_path, scan_id, out_path, edge_label2idx):
     j = load_json(json_path)
@@ -65,7 +84,6 @@ def convert_one(json_path, scan_id, out_path, edge_label2idx):
     id2idx = {nid:i for i, nid in enumerate(node_ids)}
     N = len(nodes)
 
-    # 16 dims
     node_cont_feats = []   # непрерывные признаки (без class_idx)
     node_class_idx = []    # только индекс класса
     node_meta = []
@@ -73,7 +91,7 @@ def convert_one(json_path, scan_id, out_path, edge_label2idx):
     for n in nodes:
         d = n.get('data', {})
         cname = d.get('class_name', 'unknown')
-        class_idx = float(d.get('class_id', -1))
+        class_idx = float(d.get('class_id', 0))
         b2 = d.get('bbox_2d', {})
         xyxy = b2.get('xyxy', [0, 0, 0, 0])
         x1,y1,x2,y2 = xyxy
@@ -89,7 +107,7 @@ def convert_one(json_path, scan_id, out_path, edge_label2idx):
     if len(node_cont_feats) > 0:
         node_x = torch.tensor(np.array(node_cont_feats, dtype=np.float32))
     else:
-        feat_dim = len(node_cont_feats[0]) if len(node_cont_feats) > 0 else 13
+        feat_dim = len(node_cont_feats[0]) if len(node_cont_feats) > 0 else 4
         node_x = torch.empty((0, feat_dim), dtype=torch.float32)
 
 
@@ -103,12 +121,11 @@ def convert_one(json_path, scan_id, out_path, edge_label2idx):
             continue
         ui = id2idx[u]; vi = id2idx[v]
         edge_src.append(ui); edge_dst.append(vi)
-        ed = e.get('data', {})
         u_node = nodes[ui]['data']; v_node = nodes[vi]['data']
         u_box2 = [float(x) for x in u_node.get('bbox_2d', {}).get('xyxy', [0,0,0,0])]
         v_box2 = [float(x) for x in v_node.get('bbox_2d', {}).get('xyxy', [0,0,0,0])]
-        u_cidx = float(u_node.get('class_id', -1))
-        v_cidx = float(v_node.get('class_id', -1))
+        u_cidx = float(u_node.get('class_id', 0))
+        v_cidx = float(v_node.get('class_id', 0))
         u_center2 = u_node.get('bbox_2d', {}).get('center', [0.0,0.0]); v_center2 = v_node.get('bbox_2d', {}).get('center', [0.0,0.0])
         dx2 = float(v_center2[0]) - float(u_center2[0]); dy2 = float(v_center2[1]) - float(u_center2[1])
         rel_dist2 = float(np.sqrt(dx2*dx2 + dy2*dy2))
@@ -122,263 +139,63 @@ def convert_one(json_path, scan_id, out_path, edge_label2idx):
         overlap_rel_min = inter / (min(ua,va) + 1e-8) if min(ua,va) > 0 else 0.0
         area_ratio = (va / (ua + 1e-8)) if ua > 0 else 0.0
         # same_track
-        same_track = 1.0 if (u_node.get('track_id') is not None and v_node.get('track_id') is not None and int(u_node.get('track_id')) == int(v_node.get('track_id'))) else 0.0
-        label = ed.get('label', 'unknown'); label_idx = float(edge_label2idx.get(label, -1))
-        edge_attr_vec = [rel_dist2, sin_t, cos_t, iou2, overlap_rel_min, area_ratio, iou3, same_track, label_idx]
+        label = e.get('label'); label_idx = float(edge_label2idx.get(label, 0))
+
+        edge_attr_vec = [rel_dist2, sin_t, cos_t, iou2, overlap_rel_min, area_ratio, label_idx]
         edge_attr.append([float(x) for x in edge_attr_vec])
         edge_label_idx.append(int(label_idx))
-        edge_meta.append({'u':u,'v':v,'label':label,'label_class':ed.get('label_class','unknown')})
+        edge_meta.append({'u':u,'v':v,'label':label})
         edge_u_class_idx.append(int(u_cidx))
         edge_v_class_idx.append(int(v_cidx))
 
     edge_index = torch.tensor([edge_src, edge_dst], dtype=torch.long) if len(edge_src)>0 else torch.empty((2,0),dtype=torch.long)
-    edge_attr_t = torch.tensor(np.array(edge_attr, dtype=np.float32)) if len(edge_attr)>0 else torch.empty((0,9),dtype=torch.float32)
+    edge_attr_t = torch.tensor(np.array(edge_attr, dtype=np.float32)) if len(edge_attr)>0 else torch.empty((0,7),dtype=torch.float32)
     edge_label_t = torch.tensor(np.array(edge_label_idx, dtype=np.int64)) if len(edge_label_idx)>0 else torch.empty((0,),dtype=torch.int64)
     edge_u_cls = torch.tensor(np.array(edge_u_class_idx, dtype=np.int64))
     edge_v_cls = torch.tensor(np.array(edge_v_class_idx, dtype=np.int64))
 
-    out = {
-        'x': node_x,
-        'node_class': torch.tensor(node_class_idx, dtype=torch.long),
-        'edge_index': edge_index,
-        'edge_attr': edge_attr_t,
-        'edge_label': edge_label_t,
-        'edge_u_class': edge_u_cls,
-        'edge_v_class': edge_v_cls,
-        'node_meta': node_meta,
-        'edge_meta': edge_meta,
-        'edge_label2idx': edge_label2idx,
-        'json_path': json_path,
-        'scene_name': j.get('graph', {}).get('scene_name', None)
+    data = {
+        'x':node_x, # [N, 4] N - количество объектов, x-  геометрическая характеристика [cx, cy, w, h]
+        'edge_index':edge_index, # [2, V] V - количетсво связей
+        'edge_attr':edge_attr_t, # list(rel_dist2, sin_t, cos_t, iou2, overlap_rel_min, area_ratio, label_idx) geomtric property [V, 7]
+        'node_class':torch.tensor(node_class_idx, dtype=torch.long), # [N, int] class object
+        'edge_label':edge_label_t, # индекс связи
+        'edge_u_class':edge_u_cls, # Для отладки
+        'edge_v_class':edge_v_cls, # Для отладки
+        'node_meta':node_meta, # Для отладки
+        'edge_meta':edge_meta, # Для отладки
+        'edge_label2idx':edge_label2idx, # Для отладки
+        'json_path':json_path, # Для отладки
+        'scan_id':scan_id # Для отладки
     }
-    torch.save(out, out_path)
-    return out
 
-#!/usr/bin/env python3
-"""
-split_and_convert.py
+    # Сохраняем в файл
+    torch.save(data, out_path)
+    return data
 
-Scan maps in root_dir, convert JSON graph files to .pt using convert_one(), and split into
-`database` and `queries` according to chosen strategy.
+import os
+import torch
+import glob
+import numpy as np
 
-Strategies:
-  - simple: every k-th frame is a candidate query, then filter by spatial min_sep (median*factor)
-  - cluster: cluster DB into M clusters and pick one query per cluster (closest to center)
-  - kcenter: choose queries by k-center greedy on precomputed query features (requires --queries_feats)
+root_dir = '/mnt/external_usb_hdd/6YL/Datasets/3RScan/SceneGraphs_real_classes/'
+out_dir = '/mnt/external_usb_hdd/6YL/Datasets/3RScan/SceneGraphs_real_classes_pt/'
 
-Saves:
-  - converted .pt under output_dir/{database,queries}
-  - split metadata JSON: output_dir/splits.json with lists and parameters
+all_scenes_path = [os.path.join(root_dir, f) for f in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, f))]
+all_count_scens = len(all_scenes_path)
+all_scenes_path.sort()
 
-Usage examples:
-  python split_and_convert.py --root_dir /data/sber --output_dir /out/graph --strategy simple
-  python split_and_convert.py --strategy cluster --k_clusters 150
-  python split_and_convert.py --strategy kcenter --kcenter_k 150 --queries_feats /path/q_feats.npy
-
-"""
-
-
-def parse_args():
-    p = argparse.ArgumentParser()
-    p.add_argument('--root_dir', type=str, default='/home/amelekhin96/pinkin_ek/data/sber')
-    p.add_argument('--output_dir', type=str, default='/home/amelekhin96/pinkin_ek/data/graph/test')
-    p.add_argument('--type_links_path', type=str, default='/mnt/6YL/Datasets/3DSSG/3DSSG/relationships.txt')
-    p.add_argument('--strategy', type=str, choices=['simple', 'cluster', 'kcenter'], default='simple')
-    p.add_argument('--k', type=int, default=3, help='for simple: every k-th is candidate')
-    p.add_argument('--min_sep_factor', type=float, default=2.0, help='factor * median_nearest_dist to decide min_sep')
-    p.add_argument('--k_clusters', type=int, default=150, help='for cluster strategy: number of clusters')
-    p.add_argument('--kcenter_k', type=int, default=150, help='for kcenter strategy: number of queries to select')
-    p.add_argument('--queries_feats', type=str, default=None, help='path to numpy .npy with queries features (Q x D) required for kcenter')
-    p.add_argument('--save_splits_json', action='store_true', help='save splits metadata to output_dir/splits.json')
-    p.add_argument('--force_overwrite', action='store_true', help='overwrite existing .pt files')
-    return p.parse_args()
-
-
-def collect_json_files(graphs_dir):
-    json_files = glob.glob(os.path.join(graphs_dir, '*.json'))
-    json_files.sort()
-    return json_files
-
-
-def gather_all_entries(json_files, map_num, poses_df):
-    all_entries = []
-    for idx, json_path in enumerate(json_files):
-        base = os.path.basename(json_path)
-        file_stem = base.split('.')[0]
-        out_filename = f"map{map_num}_{file_stem}.pt"
-        try:
-            frame_id = int(file_stem)
-            poses = get_position(poses_df, frame_id, map_num)
-        except Exception as e:
-            print(f"[WARN] cannot get pose for {json_path}: {e}")
-            poses = None
-        all_entries.append({
-            'idx': idx,
-            'json_path': json_path,
-            'base': base,
-            'file_stem': file_stem,
-            'out_filename': out_filename,
-            'pose': poses
-        })
-    return all_entries
-
-
-
-def save_split_metadata(output_dir, map_dir, final_query_idxs, final_db_idxs, all_entries, params):
-    splits = {
-        'map_dir': map_dir,
-        'num_total': len(all_entries),
-        'num_queries': len(final_query_idxs),
-        'num_database': len(final_db_idxs),
-        'queries': [all_entries[i]['out_filename'] for i in final_query_idxs],
-        'database': [all_entries[i]['out_filename'] for i in final_db_idxs],
-        'params': params
-    }
-    out_path = os.path.join(output_dir, 'splits.json')
-    with open(out_path, 'w', encoding='utf-8') as fh:
-        json.dump(splits, fh, indent=2, ensure_ascii=False)
-    print(f"[INFO] splits metadata saved to {out_path}")
-
-def get_splited_db_q(path_to_scene):
-    graphs_path = [os.path.join(path_to_scene, f) for f in os.listdir(path_to_scene) if os.endswith(".json")]
-    
-
-def main():
-    args = parse_args()
-    os.makedirs(args.output_dir, exist_ok=True)
-
-    # build edge labels map once
-    edge_label2idx = build_type_label_edges(args.type_links_path)
-
-    # expected explicit mapping (user-provided order)
-    # train: db = map1, queries = map2..map7
-    # test:  db = map1, queries = map8
-    all_scenes_path = [os.path.join(args.root_dir, f) for f in os.listdir(args.root_dir) if os.path.isdir(os.path.join(args.root_dir, f))]
-    all_count_scens = len(all_scenes_path)
-    train_scenes_path = all_scenes_path[:int(all_count_scens * 0.8)]
-    test_scenes_path = all_scenes_path[int(all_count_scens * 0.8):]
-
-    # train
-    for f in train_scenes_path:
-        if len(split_db_q)
-
-    # discover maps present under root_dir
-
-    print(f"[INFO] maps found under root_dir: {sorted(existing_maps)}")
-
-    # helper to validate maps
-    def ensure_map_exists(map_name):
-        if map_name not in existing_maps:
-            raise RuntimeError(f"Expected map directory '{map_name}' not found under {args.root_dir}")
-
-    # validate required maps exist (give informative error)
-    required_maps = set([train_db_map] + train_query_maps + test_query_maps)
-    missing = required_maps - existing_maps
-    if missing:
-        print(f"[WARN] Some expected maps are missing: {sorted(list(missing))}. The script will process only existing ones.")
-
-    # prepare output directories
-    train_db_dir = os.path.join(args.output_dir, 'train', 'database')
-    train_q_dir = os.path.join(args.output_dir, 'train', 'queries')
-    test_db_dir = os.path.join(args.output_dir, 'test', 'database')
-    test_q_dir = os.path.join(args.output_dir, 'test', 'queries')
-    for d in (train_db_dir, train_q_dir, test_db_dir, test_q_dir):
-        os.makedirs(d, exist_ok=True)
-
-    # small helper to process one map: convert all jsons and save as either db or queries or both
-    def process_map_full(map_name, save_as_db=False, save_as_queries=False, dest_db_dir=None, dest_q_dir=None):
-        if map_name not in existing_maps:
-            print(f"[SKIP] map {map_name} not present under root_dir")
-            return
-
-        graphs_dir = os.path.join(args.root_dir, map_name, 'graphs')
-        poses_path = os.path.join(args.root_dir, map_name, 'poses.csv')
-        poses_df = None
-        if os.path.isfile(poses_path):
-            try:
-                poses_df = pd.read_csv(poses_path)
-            except Exception as e:
-                print(f"[WARN] failed to read poses.csv for {map_name}: {e}; proceeding with default poses")
-                poses_df = None
-        else:
-            print(f"[INFO] no poses.csv for {map_name} -> using default [0,0,0] poses")
-
-        json_files = collect_json_files(graphs_dir)
-        if len(json_files) == 0:
-            print(f"[WARN] no json graph files found in {graphs_dir}")
-            return
-
-        all_entries = gather_all_entries(json_files, int(re.search(r'\d+', map_name).group()), poses_df if poses_df is not None else pd.DataFrame())
-
-        def save_entry_as_pt_local(entry):
-            src_json = entry['json_path']
-            out_fn = entry['out_filename']
-            # compute a stable pose vector (3 floats). If poses_df missing, fallback to zeros.
-            try:
-                frame_id = int(entry['file_stem'])
-                if poses_df is not None and not poses_df.empty:
-                    poses = get_position(poses_df, frame_id, int(re.search(r'\d+', map_name).group()))
-                else:
-                    poses = [0.0, 0.0, 0.0]
-            except Exception:
-                poses = [0.0, 0.0, 0.0]
-            # save to destination(s)
-            if save_as_db and dest_db_dir is not None:
-                dest_path = os.path.join(dest_db_dir, out_fn)
-                if os.path.exists(dest_path) and not args.force_overwrite:
-                    print(f"[SKIP] {dest_path} exists (use --force_overwrite to overwrite)")
-                else:
-                    try:
-                        convert_one(src_json, poses, dest_path, edge_label2idx)
-                    except Exception as e:
-                        print(f"[ERROR] convert_one failed for {src_json} -> {dest_path}: {e}")
-            if save_as_queries and dest_q_dir is not None:
-                dest_path = os.path.join(dest_q_dir, out_fn)
-                if os.path.exists(dest_path) and not args.force_overwrite:
-                    print(f"[SKIP] {dest_path} exists (use --force_overwrite to overwrite)")
-                else:
-                    try:
-                        convert_one(src_json, poses, dest_path, edge_label2idx)
-                    except Exception as e:
-                        print(f"[ERROR] convert_one failed for {src_json} -> {dest_path}: {e}")
-
-        # iterate entries and save
-        for entry in all_entries:
-            save_entry_as_pt_local(entry)
-
-        print(f"[INFO] processed map {map_name}: saved to DB? {save_as_db} Q? {save_as_queries}")
-
-    # --- Build train split: db = map1, queries = map2..map7 ---
-    if train_db_map in existing_maps:
-        # process map1 as database for train
-        process_map_full(train_db_map, save_as_db=True, save_as_queries=False, dest_db_dir=train_db_dir, dest_q_dir=None)
-    else:
-        print(f"[WARN] train DB map {train_db_map} not present -> train database will be empty")
-
-    for m in train_query_maps:
-        if m in existing_maps:
-            process_map_full(m, save_as_db=False, save_as_queries=True, dest_db_dir=None, dest_q_dir=train_q_dir)
-        else:
-            print(f"[INFO] train query map {m} not present -> skipping")
-
-    # --- Build test split: db = map1, queries = map8 ---
-    # reuse map1 as test database as well (convert again or skip if already present)
-    if test_db_map in existing_maps:
-        process_map_full(test_db_map, save_as_db=True, save_as_queries=False, dest_db_dir=test_db_dir, dest_q_dir=None)
-    else:
-        print(f"[WARN] test DB map {test_db_map} not present -> test database will be empty")
-
-    for m in test_query_maps:
-        if m in existing_maps:
-            process_map_full(m, save_as_db=False, save_as_queries=True, dest_db_dir=None, dest_q_dir=test_q_dir)
-        else:
-            print(f"[INFO] test query map {m} not present -> skipping")
-
-    # final summary
-    def summary_counts(dir_path):
-        return len(glob.glob(os.path.join(dir_path, '*.pt')))
-    print(f"[DONE] train DB: {summary_counts(train_db_dir)}, train Q: {summary_counts(train_q_dir)}, "
-          f"test DB: {summary_counts(test_db_dir)}, test Q: {summary_counts(test_q_dir)})")
-
-if __name__ == '__main__':
-    main()
+type_links_path = "/mnt/external_usb_hdd/6YL/Datasets/3RScan/files/relationships.txt"
+edge_label2idx = build_links2idx(type_links_path)
+print(edge_label2idx)
+minim = 10**10
+summa = 0
+# train
+for f in all_scenes_path:
+    scan_id = os.path.basename(f)
+    all_graphs = glob.glob(os.path.join(f, '*.json'))
+    all_graphs.sort()
+    for graph in all_graphs:
+        final_path2pt = os.path.join(out_dir, scan_id, os.path.basename(graph).split('.')[0] + '.pt')
+        os.makedirs(os.path.join(out_dir, scan_id), exist_ok=True)
+        convert_one(graph, scan_id, final_path2pt, edge_label2idx)
