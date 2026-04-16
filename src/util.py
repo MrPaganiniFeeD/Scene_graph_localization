@@ -18,7 +18,7 @@ def save_checkpoint(args, state, is_best, filename):
         shutil.copyfile(model_path, join(args.save_dir, "best_model.pth"))
 
 def save_args_yaml(args, save_dir):
-    with open(os.path.join(save_dir, 'args.yaml'), 'w') as f:
+    with open(join(save_dir, 'args.yaml'), 'w') as f:
         yaml.dump(vars(args), f, default_flow_style=False)
 
 
