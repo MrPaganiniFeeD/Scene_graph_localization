@@ -39,10 +39,10 @@ class VPRGraphEncoder(nn.Module):
                  n_layers=2,
                  proj_dim=64,
                  num_node_classes=None,
-                 node_emb_dim=64,
+                 node_emb_dim=128,
                  num_edge_classes=None,
-                 edge_emb_dim=64,
-                 dropout=0):
+                 edge_emb_dim=128,
+                 dropout=0.1):
         super().__init__()
 
         self.use_node_class = (num_node_classes is not None)

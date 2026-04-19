@@ -6,9 +6,9 @@ import argparse
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Training script for VPRGraphEncoder with triplet loss', allow_abbrev=False)
     
-    parser.add_argument("--train_batch_size", type=int, default=8,
+    parser.add_argument("--train_batch_size", type=int, default=16,
                         help="Number of triplets (query, pos, negs) in a batch. Each triplet consists of 12 images")
-    parser.add_argument("--infer_batch_size", type=int, default=16,
+    parser.add_argument("--infer_batch_size", type=int, default=32,
                         help="Batch size for inference (caching and testing)")
     parser.add_argument("--criterion", type=str, default='triplet', help='loss to be used',
                         choices=["triplet", "sare_ind", "sare_joint"])
@@ -19,10 +19,10 @@ def parse_arguments():
     parser.add_argument("--patience", type=int, default=3)
     parser.add_argument("--lr", type=float, default=0.00001, help="_")
     parser.add_argument("--optim", type=str, default="adam", help="_", choices=["adam", "sgd"])
-    parser.add_argument("--mode", type=str, default="image", help="_", choices=["graph", "image", "fusion"])
-    parser.add_argument("--cache_refresh_rate", type=int, default=5000,
+    parser.add_argument("--mode", type=str, default="graph", help="_", choices=["graph", "image", "fusion"])
+    parser.add_argument("--cache_refresh_rate", type=int, default=50000,
                         help="How often to refresh cache, in number of queries")
-    parser.add_argument("--queries_per_epoch", type=int, default=5000,
+    parser.add_argument("--queries_per_epoch", type=int, default=50000,
                         help="How many queries to consider for one epoch. Must be multiple of cache_refresh_rate")
     parser.add_argument("--negs_num_per_query", type=int, default=2,
                         help="How many negatives to consider per each query in the loss")
@@ -34,7 +34,7 @@ def parse_arguments():
                         help="When (and if) to apply the l2 norm with shallow aggregation layers")
     parser.add_argument('--pca_dim', type=int, default=None, help="PCA dimension (number of principal components). If None, PCA is not used.")
     parser.add_argument("--registers", action='store_true', help="_")
-    parser.add_argument("--features_dim", type=int, default=8448, help="_")
+    parser.add_argument("--features_dim", type=int, default=256, help="_")
     parser.add_argument("--in_dim_graph", type=int, default=4, help="_")
     parser.add_argument("--soft_positives_radius", type=float, default=0.5, help="_")
     # Initialization parameters
@@ -61,17 +61,17 @@ def parse_arguments():
                         help="Recalls to be computed, such as R@5.")
     parser.add_argument("--rerank_num", type=int, default=100, help="_")
     # GRAPH ENCODER PARAMETRS:
-    parser.add_argument("--graph_hidden_dim", type=int, default=256, help="_")
+    parser.add_argument("--graph_hidden_dim", type=int, default=512, help="_")
     parser.add_argument("--graph_layers", type=int, default=1, help="_")
     parser.add_argument("--num_obj_classes", type=int, default=528 + 1, help="_")
-    parser.add_argument("--num_edge_classes", type=int, default=23, help="_")
+    parser.add_argument("--num_edge_classes", type=int, default=41, help="_")
     parser.add_argument("--graph_proj", type=int, default=256, help="_")
     parser.add_argument("--graph_lr", type=int, default=0.00001, help="_")
 
 
     # Data augmentation parameters
     parser.add_argument("--modalities", nargs='+', choices=['image', 'graph', 'pose'], 
-                    default=['pose', 'image'], help="List of modalities")
+                    default=['pose', 'graph'], help="List of modalities")
     parser.add_argument("--visualize", type=bool, default=True, help='_')
     parser.add_argument("--brightness", type=float, default=None, help="_")
     parser.add_argument("--contrast", type=float, default=None, help="_")
