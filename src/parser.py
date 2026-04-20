@@ -6,9 +6,9 @@ import argparse
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Training script for VPRGraphEncoder with triplet loss', allow_abbrev=False)
     
-    parser.add_argument("--train_batch_size", type=int, default=16,
+    parser.add_argument("--train_batch_size", type=int, default=8,
                         help="Number of triplets (query, pos, negs) in a batch. Each triplet consists of 12 images")
-    parser.add_argument("--infer_batch_size", type=int, default=32,
+    parser.add_argument("--infer_batch_size", type=int, default=16,
                         help="Batch size for inference (caching and testing)")
     parser.add_argument("--criterion", type=str, default='triplet', help='loss to be used',
                         choices=["triplet", "sare_ind", "sare_joint"])
@@ -16,9 +16,10 @@ def parse_arguments():
                         help="margin for the triplet loss")
     parser.add_argument("--epochs_num", type=int, default=50,
                         help="number of epochs to train for")
-    parser.add_argument("--patience", type=int, default=3)
+    parser.add_argument("--patience", type=int, default=20)
     parser.add_argument("--lr", type=float, default=0.00001, help="_")
     parser.add_argument("--optim", type=str, default="adam", help="_", choices=["adam", "sgd"])
+    parser.add_argument("--loss_reduction", type=str, default="sum", help="_")
     parser.add_argument("--mode", type=str, default="graph", help="_", choices=["graph", "image", "fusion"])
     parser.add_argument("--cache_refresh_rate", type=int, default=50000,
                         help="How often to refresh cache, in number of queries")
@@ -62,16 +63,19 @@ def parse_arguments():
     parser.add_argument("--rerank_num", type=int, default=100, help="_")
     # GRAPH ENCODER PARAMETRS:
     parser.add_argument("--graph_hidden_dim", type=int, default=512, help="_")
+    parser.add_argument("--node_emb_dim", type=int, default=128, help="_")
+    parser.add_argument("--edge_emb_dim", type=int, default=128, help="_")
     parser.add_argument("--graph_layers", type=int, default=1, help="_")
     parser.add_argument("--num_obj_classes", type=int, default=528 + 1, help="_")
     parser.add_argument("--num_edge_classes", type=int, default=41, help="_")
     parser.add_argument("--graph_proj", type=int, default=256, help="_")
+    parser.add_argument("--graph_dropout", type=float, default=0.1, help="_")
     parser.add_argument("--graph_lr", type=int, default=0.00001, help="_")
 
 
     # Data augmentation parameters
     parser.add_argument("--modalities", nargs='+', choices=['image', 'graph', 'pose'], 
-                    default=['pose', 'graph'], help="List of modalities")
+                    default=['pose', "graph"], help="List of modalities")
     parser.add_argument("--visualize", type=bool, default=True, help='_')
     parser.add_argument("--brightness", type=float, default=None, help="_")
     parser.add_argument("--contrast", type=float, default=None, help="_")

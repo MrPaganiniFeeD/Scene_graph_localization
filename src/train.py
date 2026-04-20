@@ -19,6 +19,7 @@ import util
 import commons
 import warnings
 import test
+import test_patched
 warnings.filterwarnings('ignore')
 import os
 
@@ -39,6 +40,50 @@ logging.info(f"The outputs are being saved in {args.save_dir}")
 logging.info(f"Using {torch.cuda.device_count()} GPUs and {multiprocessing.cpu_count()} CPUs")
 
 
+@torch.no_grad()
+def compute_edge_attr_stats_from_dataset(ds, max_items=None):
+    sum_ = None
+    sum_sq = None
+    count = 0
+
+    items = ds.items if max_items is None else ds.items[:max_items]
+
+    for item in tqdm(items, desc="Edge stats"):
+        graph_path = item["graph"]
+        if graph_path is None:
+            continue
+
+        g = ds.loader.load_graph(graph_path)
+
+        graphs = g if isinstance(g, list) else [g]
+        for gi in graphs:
+            if gi is None or gi.edge_attr is None or gi.edge_attr.numel() == 0:
+                continue
+
+            ea = gi.edge_attr.detach().float().cpu()   # [E, F]
+
+            if sum_ is None:
+                sum_ = torch.zeros(ea.shape[1], dtype=torch.float64)
+                sum_sq = torch.zeros(ea.shape[1], dtype=torch.float64)
+
+            sum_ += ea.double().sum(dim=0)
+            sum_sq += (ea.double() ** 2).sum(dim=0)
+            count += ea.shape[0]
+
+    if count == 0:
+        raise RuntimeError("No edge_attr found.")
+
+    mean = sum_ / count
+    var = sum_sq / count - mean ** 2
+    std = torch.sqrt(torch.clamp(var, min=0.0))
+
+    print("count:", count)
+    print("mean per feature:", mean)
+    print("std per feature:", std)
+
+    return mean, std
+
+
 #### Creation of Datasets
 logging.debug(f"Loading dataset {args.dataset_name} from folder {args.datasets_folder}")
 
@@ -53,9 +98,45 @@ logging.info(f"Train query set: {triplets_ds}")
 test_ds = datasets_ws.BaseDataset(args, args.datasets_folder, args.dataset_name, "test")
 logging.info(f"Test set: {test_ds}")
 
-#### Initialize model
-graph_encoder = network.VPRGraphEncoder(in_dim=args.in_dim_graph, hidden_dim=args.graph_hidden_dim, n_layers=args.graph_layers, num_node_classes=args.num_obj_classes, num_edge_classes=args.num_edge_classes, proj_dim=args.graph_proj).to(args.device)
+#### normalizer graph
+if args.mode == "graph" or args.mode == "fusion":
+    graph_normalizer = network.EdgeAttrNormalizer(log_indices=[5])
+    for item in triplets_ds.items:
+        graph_path = item["graph"]
+        if graph_path is None:
+            continue
+        
+        g = torch.load(graph_path, map_location="cpu")
+        g = datasets_ws._sanitize_graph_obj(g, feat_dim=args.in_dim_graph)
 
+        if isinstance(g, list):
+            for gi in g:
+                if gi is not None and gi.edge_attr is not None and gi.edge_attr.numel() > 0:
+                    graph_normalizer.update(gi.edge_attr)
+        else:
+            if g.edge_attr is not None and g.edge_attr.numel() > 0:
+                graph_normalizer.update(g.edge_attr)
+
+graph_normalizer.finalize()
+# util.save_edge_normalizer(args, graph_normalizer.mean, graph_normalizer.std, graph_normalizer.log_indices, "edge_normalizer.pt")
+
+triplets_ds.loader.edge_normalizer = graph_normalizer
+test_ds.loader.edge_normalizer = graph_normalizer
+
+compute_edge_attr_stats_from_dataset(triplets_ds, max_items=1000)
+
+#### Initialize model
+graph_encoder = network.VPRGraphEncoder(
+    in_dim=args.in_dim_graph,
+    hidden_dim=args.graph_hidden_dim,
+    n_layers=args.graph_layers,
+    num_node_classes=args.num_obj_classes, 
+    node_emb_dim=args.node_emb_dim,
+    num_edge_classes=args.num_edge_classes,
+    edge_emb_dim=args.edge_emb_dim,
+    proj_dim=args.graph_proj,
+    dropout=args.graph_dropout).to(args.device)
+    
 megaloc = torch.hub.load("gmberton/MegaLoc", "get_trained_model")
 image_encoder = megaloc.to(args.device)
 
@@ -77,14 +158,17 @@ if args.optim == "adam":
         optimizer = torch.optim.Adam(model.graph_encoder.parameters(), lr=args.graph_lr, weight_decay=1e-4)
     elif args.mode == "image":
         # trainable_params = [p for p in model.image_encoder.parameters() if p.requires_grad]
-        optimizer = torch.optim.Adam(model.image_encoder.aggregator.parameters(), lr=args.lr * 0.1)
+        # optimizer = torch.optim.Adam(model.image_encoder.aggregator.parameters(), lr=args.lr * 0.1)
+        optimizer = torch.optim.Adam(
+            model.image_encoder.aggregator.linear.parameters(),
+            lr=3e-7,
+            weight_decay=1e-4
+        )
     elif args.mode == "fusion":
         optimizer = torch.optim.Adam(
             [
                 {"params": model.graph_encoder.parameters(), "lr": args.lr},
-                {"params": model.graph_proj.parameters(), "lr": args.lr},
                 {"params": model.graph_gate.parameters(), "lr": args.lr},
-                {"params": model.image_proj.parameters(), "lr": args.lr},
                 {"params": model.fuse_norm.parameters(), "lr": args.lr},
                 {"params": model.fuse_mlp.parameters(), "lr": args.lr},
             ],
@@ -94,7 +178,7 @@ if args.optim == "adam":
 elif args.optim == "sgd":
     optimizer = torch.optim.SGD(base_model.parameters(), lr=args.lr, momentum=0.9, weight_decay=0.001)
 
-triplet_loss = nn.TripletMarginLoss(margin=args.margin, p=2, reduction="sum")
+triplet_loss = nn.TripletMarginLoss(margin=args.margin, p=2, reduction=args.loss_reduction)
 
 #### Resume model, optimizer, and other training parameters
 if args.resume:
@@ -237,9 +321,16 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
     is_best = recalls['R@5'] > best_r5
     
     # Save checkpoint, which contains all training parameters
-    util.save_checkpoint(args, {"epoch_num": epoch_num, "model_state_dict": model.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict(), "recalls": recalls, "best_r5": best_r5,
-        "not_improved_num": not_improved_num, "mode": args.mode,
+    util.save_checkpoint(args, {"epoch_num": epoch_num,
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "recalls": recalls,
+        "best_r5": best_r5,
+        "not_improved_num": not_improved_num,
+        "mode": args.mode, 
+        "mean": graph_normalizer.mean,
+        "std": graph_normalizer.std,
+        "log_indices": graph_normalizer.log_indices,
     }, is_best, filename="last_model.pth")
     
     
@@ -253,7 +344,7 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
         logging.info(f"Not improved: {not_improved_num} / {args.patience}: best R@5 = {best_r5:.1f}, current R@5 = {(recalls['R@5']):.1f}")
         if not_improved_num >= args.patience:
             logging.info(f"Performance did not improve for {not_improved_num} epochs. Stop training.")
-            break
+            breaks
 
 
 

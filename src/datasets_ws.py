@@ -104,7 +104,7 @@ def _graph_to_list(g):
     return [g]
 
 
-def dict_to_pyg_data(d, feat_dim=4, edge_attr_dim=7):
+def dict_to_pyg_data(d, feat_dim=4, edge_attr_dim=6):
     if d is None:
         return None
 
@@ -204,12 +204,12 @@ def dict_to_pyg_data(d, feat_dim=4, edge_attr_dim=7):
     )
 
 
-def _ensure_nonempty(data_obj, feat_dim=4):
+def _ensure_nonempty(data_obj, feat_dim=4, feat_edge_attr_dim=6):
     if data_obj is None:
         return Data(
             x=torch.zeros((1, feat_dim), dtype=torch.float32),
             edge_index=torch.empty((2, 0), dtype=torch.long),
-            edge_attr=torch.empty((0, 7), dtype=torch.float32),
+            edge_attr=torch.empty((0, feat_edge_attr_dim), dtype=torch.float32),
             edge_label=torch.empty((0,), dtype=torch.long),
             edge_u_class=torch.empty((0,), dtype=torch.long),
             edge_v_class=torch.empty((0,), dtype=torch.long),
@@ -252,7 +252,7 @@ def _ensure_nonempty(data_obj, feat_dim=4):
 
     if synthetic_node:
         edge_index = torch.empty((2, 0), dtype=torch.long)
-        edge_attr = torch.empty((0, 7), dtype=torch.float32)
+        edge_attr = torch.empty((0, feat_edge_attr_dim), dtype=torch.float32)
         edge_label = torch.empty((0,), dtype=torch.long)
         edge_u_class = torch.empty((0,), dtype=torch.long)
         edge_v_class = torch.empty((0,), dtype=torch.long)
@@ -270,7 +270,7 @@ def _ensure_nonempty(data_obj, feat_dim=4):
 
         edge_attr = getattr(data_obj, "edge_attr", None)
         if edge_attr is None:
-            edge_attr = torch.empty((0, 7), dtype=torch.float32)
+            edge_attr = torch.empty((0, feat_edge_attr_dim), dtype=torch.float32)
         elif not torch.is_tensor(edge_attr):
             edge_attr = torch.tensor(np.asarray(edge_attr, dtype=float), dtype=torch.float32)
         else:
@@ -339,7 +339,7 @@ def _ensure_nonempty(data_obj, feat_dim=4):
     )
 
 
-def _sanitize_graph_obj(g, feat_dim=4):
+def _sanitize_graph_obj(g, feat_dim=4, feat_edge_attr_dim=6):
     if g is None:
         return None
 
@@ -406,7 +406,7 @@ def _sanitize_graph_obj(g, feat_dim=4):
 
     edge_attr = getattr(g, "edge_attr", None)
     if edge_attr is None:
-        edge_attr = torch.empty((0, 7), dtype=torch.float32)
+        edge_attr = torch.empty((0, feat_edge_attr_dim), dtype=torch.float32)
     elif not torch.is_tensor(edge_attr):
         edge_attr = torch.tensor(np.asarray(edge_attr, dtype=float), dtype=torch.float32)
     else:
@@ -477,23 +477,23 @@ def _sanitize_graph_obj(g, feat_dim=4):
     )
 
 
-def _ensure_graph_list(graphs, feat_dim=4):
+def _ensure_graph_list(graphs, feat_dim=4, feat_edge_attr_dim=6):
     flat = []
     for g in _graph_to_list(graphs):
-        sg = _sanitize_graph_obj(g, feat_dim=feat_dim)
+        sg = _sanitize_graph_obj(g, feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim)
         if sg is None:
             continue
         if isinstance(sg, list):
             for x in sg:
-                x = _ensure_nonempty(_sanitize_graph_obj(x, feat_dim=feat_dim), feat_dim=feat_dim)
+                x = _ensure_nonempty(_sanitize_graph_obj(x,feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim), feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim)
                 flat.append(x)
         else:
-            flat.append(_ensure_nonempty(sg, feat_dim=feat_dim))
+            flat.append(_ensure_nonempty(sg, feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim))
     return flat
 
 
-def _collate_graph_objects(graphs, feat_dim=4):
-    graphs = _ensure_graph_list(graphs, feat_dim=feat_dim)
+def _collate_graph_objects(graphs, feat_dim=4, feat_edge_attr_dim=6):
+    graphs = _ensure_graph_list(graphs, feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim)
     if len(graphs) == 0:
         return None
     if isinstance(graphs[0], (Data, HeteroData)):
@@ -508,7 +508,7 @@ def _collate_graph_objects(graphs, feat_dim=4):
 # Collate functions
 # ---------------------------------------------------------------------
 
-def _collate_samples(samples, feat_dim=4):
+def _collate_samples(samples, feat_dim=4, feat_edge_attr_dim=6):
     """
     Collate list of sample dicts into a batch dict.
     """
@@ -523,12 +523,12 @@ def _collate_samples(samples, feat_dim=4):
     out["image"] = _stack_images(image_values) if image_values else None
 
     graph_values = [s.get("graph") for s in samples if s.get("graph") is not None]
-    out["graph"] = _collate_graph_objects(graph_values, feat_dim=feat_dim) if graph_values else None
+    out["graph"] = _collate_graph_objects(graph_values, feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim) if graph_values else None
 
     return out
 
 
-def collate_fn(batch, feat_dim=4):
+def collate_fn(batch, feat_dim=4, feat_edge_attr_dim=6):
     """
     Unified collate:
       - inference/cache mode: batch = list[dict]
@@ -537,11 +537,11 @@ def collate_fn(batch, feat_dim=4):
     first = batch[0]
 
     if isinstance(first, dict):
-        return _collate_samples(batch, feat_dim=feat_dim)
+        return _collate_samples(batch, feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim)
 
 
     samples, triplets_local_indexes, triplets_global_indexes = zip(*batch)
-    batch_samples = _collate_samples(list(samples), feat_dim=feat_dim)
+    batch_samples = _collate_samples(list(samples), feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim)
 
     triplets_local_indexes = torch.cat([x[None] for x in triplets_local_indexes], dim=0)
     triplets_global_indexes = torch.cat([x[None] for x in triplets_global_indexes], dim=0)
@@ -574,6 +574,9 @@ class PCADataset(data.Dataset):
 # Loader / preprocessor
 # ---------------------------------------------------------------------
 
+
+
+
 class SampleLoader:
     """
     Класс, который выполняет подготавливает данные для TripletDataset: 
@@ -585,7 +588,7 @@ class SampleLoader:
       - graph x поворачивается на 90° по часовой
     """
 
-    def __init__(self, args, use_images=True, use_graphs=True):
+    def __init__(self, args, use_images=True, use_graphs=True, normalizer=None):
         self.args = args
         self.use_images = use_images
         self.use_graphs = use_graphs
@@ -598,6 +601,7 @@ class SampleLoader:
         self.image_std = DEFAULT_STD
 
         self.query_aug = self._build_query_augmentations()
+        self.edge_normalizer = normalizer
 
     def _rotate_pil_clockwise_90(self, img):
         return img.transpose(Image.Transpose.ROTATE_270)
@@ -688,6 +692,8 @@ class SampleLoader:
                 g = _ensure_nonempty(g, feat_dim=self.feat_dim)
                 if self.graph_rotate:
                     g = self.rotate_graph_features(g)
+                if g.edge_attr is not None and g.edge_attr.numel() > 0:
+                    g.edge_attr = self.edge_normalizer.transform(g.edge_attr)
                 out.append(g)
             return out
 
@@ -695,6 +701,9 @@ class SampleLoader:
 
         if self.graph_rotate:
             graph = self.rotate_graph_features(graph)
+
+        if graph.edge_attr is not None and graph.edge_attr.numel() > 0:
+            graph.edge_attr = self.edge_normalizer.transform(graph.edge_attr)
 
         return graph
 
@@ -798,7 +807,6 @@ class BaseDataset(data.Dataset):
         # loader/preprocessor
         self.loader = SampleLoader(args, use_images=self.use_images, use_graphs=self.use_graphs)
 
-        # split files
         if dataset_name == "3RScan":
             if split == "train":
                 split_scans_path = join(meta_data, "train_scans.txt")
@@ -1053,6 +1061,7 @@ class TripletsDataset(BaseDataset):
         self.is_inference = False
 
         self.soft_positives_radius = getattr(args, "soft_positives_radius", 0.1)
+        print("SOFT POSITIVE RADIUS: ", self.soft_positives_radius)
         #self.train_positives_dist_threshold = getattr(args, "train_positives_dist_threshold", 10.0)
 
         self.soft_positives_per_query = self._build_soft_positives(radius=self.soft_positives_radius)
@@ -1109,8 +1118,8 @@ class TripletsDataset(BaseDataset):
 
         neg_indexes = []
         for ref in chosen_refs:
-            candidates = self.ref_to_db_indices[ref]
-            neg = np.random.choice(candidates, size=1)[0]
+            candidates = self.ref_to_db_indices[ref] 
+            neg = np.random.choice(candidates, size=1)[0]   
             neg_indexes.append(neg)
 
         return np.array(neg_indexes, dtype=np.int32)

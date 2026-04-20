@@ -1,4 +1,4 @@
-
+import yaml
 import re
 import torch
 import shutil
@@ -7,16 +7,27 @@ import numpy as np
 from os.path import join
 from sklearn.decomposition import PCA
 import datasets_ws
-import yaml
+
 
 
 def save_checkpoint(args, state, is_best, filename):
     model_path = join(args.save_dir, filename)
-    save_args_yaml(args, args.save_dir)
+    normalizer_path = join(args.save_dir, "edge_normalizer.pt")
     torch.save(state, model_path)
+    torch.save({"mean": state["mean"],
+    "std": state["std"],
+    "log_indices": state["log"]})
+    save_args_yaml(args, args.save_dir)
     if is_best:
         shutil.copyfile(model_path, join(args.save_dir, "best_model.pth"))
 
+
+def save_edge_normalizer(args, mean, std, log_indices, filename):
+    normalizer_path = join(args.save_dir, filename)
+    torch.save({"mean": mean,
+                "std": std,
+                "log_indices": log_indices}, normalizer_path)
+    
 def save_args_yaml(args, save_dir):
     with open(join(save_dir, 'args.yaml'), 'w') as f:
         yaml.dump(vars(args), f, default_flow_style=False)
