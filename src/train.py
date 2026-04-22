@@ -224,7 +224,7 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
         print(len(triplets_dl))
         for batch_samples, triplets_local_indexes, triplets_global_indexes in tqdm(triplets_dl, ncols=100):
             # Compute features of all images (images contains queries, positives and negatives)
-            if epoch_num == 0 and loop_num == 0:
+            if epoch_num == 0 and loop_num == 0 and False:
                 visualize.visualize_triplet_images(
                     dataset=triplets_ds,
                     triplets_global_indexes=triplets_global_indexes,
