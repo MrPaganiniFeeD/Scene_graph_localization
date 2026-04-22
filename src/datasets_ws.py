@@ -104,7 +104,7 @@ def _graph_to_list(g):
     return [g]
 
 
-def dict_to_pyg_data(d, feat_dim=4, edge_attr_dim=6):
+def dict_to_pyg_data(d, feat_dim, edge_attr_dim):
     if d is None:
         return None
 
@@ -204,7 +204,7 @@ def dict_to_pyg_data(d, feat_dim=4, edge_attr_dim=6):
     )
 
 
-def _ensure_nonempty(data_obj, feat_dim=4, feat_edge_attr_dim=6):
+def _ensure_nonempty(data_obj, feat_dim, feat_edge_attr_dim):
     if data_obj is None:
         return Data(
             x=torch.zeros((1, feat_dim), dtype=torch.float32),
@@ -217,7 +217,7 @@ def _ensure_nonempty(data_obj, feat_dim=4, feat_edge_attr_dim=6):
         )
 
     if isinstance(data_obj, dict):
-        data_obj = dict_to_pyg_data(data_obj, feat_dim=feat_dim)
+        data_obj = dict_to_pyg_data(data_obj, feat_dim, feat_edge_attr_dim)
 
     if not isinstance(data_obj, (Data, HeteroData)):
         return data_obj
@@ -339,7 +339,7 @@ def _ensure_nonempty(data_obj, feat_dim=4, feat_edge_attr_dim=6):
     )
 
 
-def _sanitize_graph_obj(g, feat_dim=4, feat_edge_attr_dim=6):
+def _sanitize_graph_obj(g, feat_dim, feat_edge_attr_dim):
     if g is None:
         return None
 
@@ -348,12 +348,12 @@ def _sanitize_graph_obj(g, feat_dim=4, feat_edge_attr_dim=6):
         return [x for x in g.to_data_list()]
 
     if isinstance(g, dict):
-        g = dict_to_pyg_data(g, feat_dim=feat_dim)
+        g = dict_to_pyg_data(g, feat_dim, feat_edge_attr_dim)
 
     if isinstance(g, list):
         out = []
         for x in g:
-            sx = _sanitize_graph_obj(x, feat_dim=feat_dim)
+            sx = _sanitize_graph_obj(x, feat_dim, feat_edge_attr_dim)
             if sx is None:
                 continue
             if isinstance(sx, list):
@@ -477,22 +477,22 @@ def _sanitize_graph_obj(g, feat_dim=4, feat_edge_attr_dim=6):
     )
 
 
-def _ensure_graph_list(graphs, feat_dim=4, feat_edge_attr_dim=6):
+def _ensure_graph_list(graphs, feat_dim, feat_edge_attr_dim):
     flat = []
     for g in _graph_to_list(graphs):
-        sg = _sanitize_graph_obj(g, feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim)
+        sg = _sanitize_graph_obj(g, feat_dim, feat_edge_attr_dim)
         if sg is None:
             continue
         if isinstance(sg, list):
             for x in sg:
-                x = _ensure_nonempty(_sanitize_graph_obj(x,feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim), feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim)
+                x = _ensure_nonempty(_sanitize_graph_obj(x, feat_dim, feat_edge_attr_dim), feat_dim, feat_edge_attr_dim)
                 flat.append(x)
         else:
-            flat.append(_ensure_nonempty(sg, feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim))
+            flat.append(_ensure_nonempty(sg, feat_dim, feat_edge_attr_dim))
     return flat
 
 
-def _collate_graph_objects(graphs, feat_dim=4, feat_edge_attr_dim=6):
+def _collate_graph_objects(graphs, feat_dim, feat_edge_attr_dim):
     graphs = _ensure_graph_list(graphs, feat_dim=feat_dim, feat_edge_attr_dim=feat_edge_attr_dim)
     if len(graphs) == 0:
         return None
@@ -508,7 +508,7 @@ def _collate_graph_objects(graphs, feat_dim=4, feat_edge_attr_dim=6):
 # Collate functions
 # ---------------------------------------------------------------------
 
-def _collate_samples(samples, feat_dim=4, feat_edge_attr_dim=6):
+def _collate_samples(samples, feat_dim, feat_edge_attr_dim):
     """
     Collate list of sample dicts into a batch dict.
     """
@@ -528,7 +528,7 @@ def _collate_samples(samples, feat_dim=4, feat_edge_attr_dim=6):
     return out
 
 
-def collate_fn(batch, feat_dim=4, feat_edge_attr_dim=6):
+def collate_fn(batch, feat_dim, feat_edge_attr_dim):
     """
     Unified collate:
       - inference/cache mode: batch = list[dict]
@@ -594,7 +594,7 @@ class SampleLoader:
         self.use_graphs = use_graphs
 
         self.resize = args.resize
-        self.graph_rotate = getattr(args, "graph_rotate", True)
+        self.graph_rotate = getattr(args, "graph_rotate", False)
         self.feat_dim = args.in_dim_graph
 
         self.image_mean = DEFAULT_MEAN
@@ -634,6 +634,127 @@ class SampleLoader:
     def _load_pil_image(self, img_path):
         return path_to_pil_img(img_path)
 
+    def _cxcywh_to_xyxy(self, boxes):
+        """
+        boxes: [N, 4] = [cx, cy, w, h] in normalized coords [0, 1]
+        returns: [N, 4] = [x1, y1, x2, y2]
+        """
+        cx, cy, w, h = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+        x1 = (cx - w / 2.0).clamp(0.0, 1.0)
+        y1 = (cy - h / 2.0).clamp(0.0, 1.0)
+        x2 = (cx + w / 2.0).clamp(0.0, 1.0)
+        y2 = (cy + h / 2.0).clamp(0.0, 1.0)
+        return torch.stack([x1, y1, x2, y2], dim=1)
+
+
+    def _iou_xyxy_torch(self, a, b, eps=1e-8):
+        """
+        a, b: [E, 4] in xyxy
+        returns: [E]
+        """
+        ax1, ay1, ax2, ay2 = a[:, 0], a[:, 1], a[:, 2], a[:, 3]
+        bx1, by1, bx2, by2 = b[:, 0], b[:, 1], b[:, 2], b[:, 3]
+
+        ix1 = torch.maximum(ax1, bx1)
+        iy1 = torch.maximum(ay1, by1)
+        ix2 = torch.minimum(ax2, bx2)
+        iy2 = torch.minimum(ay2, by2)
+
+        iw = torch.clamp(ix2 - ix1, min=0.0)
+        ih = torch.clamp(iy2 - iy1, min=0.0)
+        inter = iw * ih
+
+        area_a = torch.clamp(ax2 - ax1, min=0.0) * torch.clamp(ay2 - ay1, min=0.0)
+        area_b = torch.clamp(bx2 - bx1, min=0.0) * torch.clamp(by2 - by1, min=0.0)
+        union = area_a + area_b - inter
+
+        return inter / (union + eps)
+
+
+    def _angle_sin_cos_torch(self, dx, dy, eps=1e-8):
+        """
+        dx, dy: [E]
+        returns sin_t, cos_t
+        """
+        norm = torch.sqrt(dx * dx + dy * dy + eps)
+        cos_t = dx / norm
+        sin_t = dy / norm
+        return sin_t, cos_t
+
+
+    def _recompute_edge_attr_from_x(self, graph):
+        """
+        Пересчитывает edge_attr после поворота node features.
+        Ожидает:
+        graph.x: [N, 4] = [cx, cy, w, h]
+        graph.edge_index: [2, E]
+        Возвращает edge_attr: [E, 6]
+        """
+        if graph is None or graph.x is None or graph.edge_index is None:
+            return graph
+
+        if graph.x.ndim != 2 or graph.x.shape[1] < 4:
+            return graph
+
+        if graph.edge_index.numel() == 0:
+            graph.edge_attr = torch.empty((0, 6), dtype=torch.float32, device=graph.x.device)
+            return graph
+
+        x = graph.x.float()
+        edge_index = graph.edge_index.long()
+
+        src = edge_index[0]
+        dst = edge_index[1]
+
+        u_boxes = x[src, :4]
+        v_boxes = x[dst, :4]
+
+        u_xyxy = self._cxcywh_to_xyxy(u_boxes)
+        v_xyxy = self._cxcywh_to_xyxy(v_boxes)
+
+        u_center = u_boxes[:, :2]
+        v_center = v_boxes[:, :2]
+
+        dx = v_center[:, 0] - u_center[:, 0]
+        dy = v_center[:, 1] - u_center[:, 1]
+
+        rel_dist2 = torch.sqrt(dx * dx + dy * dy)
+        sin_t, cos_t = self._angle_sin_cos_torch(dx, dy)
+        iou2 = self._iou_xyxy_torch(u_xyxy, v_xyxy)
+
+        ux1, uy1, ux2, uy2 = u_xyxy[:, 0], u_xyxy[:, 1], u_xyxy[:, 2], u_xyxy[:, 3]
+        vx1, vy1, vx2, vy2 = v_xyxy[:, 0], v_xyxy[:, 1], v_xyxy[:, 2], v_xyxy[:, 3]
+
+        ua = torch.clamp(ux2 - ux1, min=0.0) * torch.clamp(uy2 - uy1, min=0.0)
+        va = torch.clamp(vx2 - vx1, min=0.0) * torch.clamp(vy2 - vy1, min=0.0)
+
+        ix1 = torch.maximum(ux1, vx1)
+        iy1 = torch.maximum(uy1, vy1)
+        ix2 = torch.minimum(ux2, vx2)
+        iy2 = torch.minimum(uy2, vy2)
+
+        iw = torch.clamp(ix2 - ix1, min=0.0)
+        ih = torch.clamp(iy2 - iy1, min=0.0)
+        inter = iw * ih
+
+        overlap_rel_min = torch.where(
+            torch.minimum(ua, va) > 0,
+            inter / (torch.minimum(ua, va) + 1e-8),
+            torch.zeros_like(inter),
+        )
+
+        area_ratio = torch.where(
+            ua > 0,
+            va / (ua + 1e-8),
+            torch.zeros_like(ua),
+        )
+
+        graph.edge_attr = torch.stack(
+            [rel_dist2, sin_t, cos_t, iou2, overlap_rel_min, area_ratio],
+            dim=1
+        ).float()
+
+        return graph
 
     def rotate_graph_features(self, graph):
         """
@@ -684,22 +805,22 @@ class SampleLoader:
             return None
 
         graph = torch.load(graph_path, map_location="cpu")
-        graph = _sanitize_graph_obj(graph, feat_dim=self.feat_dim)
+        graph = _sanitize_graph_obj(graph, self.feat_dim, self.args.edge_attr_dim)
 
         if isinstance(graph, list):
             out = []
             for g in graph:
-                g = _ensure_nonempty(g, feat_dim=self.feat_dim)
-                if self.graph_rotate:
+                g = _ensure_nonempty(g, self.feat_dim, self.args.edge_attr_dim)
+                if self.graph_rotate and False:
                     g = self.rotate_graph_features(g)
                 if g.edge_attr is not None and g.edge_attr.numel() > 0:
                     g.edge_attr = self.edge_normalizer.transform(g.edge_attr)
                 out.append(g)
             return out
 
-        graph = _ensure_nonempty(graph, feat_dim=self.feat_dim)
+        graph = _ensure_nonempty(graph, self.feat_dim, self.args.edge_attr_dim)
 
-        if self.graph_rotate:
+        if self.graph_rotate and False:
             graph = self.rotate_graph_features(graph)
 
         if graph.edge_attr is not None and graph.edge_attr.numel() > 0:
@@ -823,7 +944,7 @@ class BaseDataset(data.Dataset):
             for scene_name in scene_names:
                 is_ref = (scene_name in self.scan_to_ref and self.scan_to_ref[scene_name] == scene_name)
                 if is_ref:
-                    db_items = self._build_items_for_scene(scene_name)
+                    db_items = self._build_items_for_scene(args, scene_name)
                     if db_items:
                         self.database_items.extend(db_items)
                     else:
@@ -833,7 +954,7 @@ class BaseDataset(data.Dataset):
                     continue
 
                 for query_scene in self.ref_to_scans.get(scene_name, []):
-                    q_items = self._build_items_for_scene(query_scene)
+                    q_items = self._build_items_for_scene(args, query_scene)
                     if q_items:
                         self.queries_items.extend(q_items)
                     else:
@@ -861,9 +982,9 @@ class BaseDataset(data.Dataset):
         """
 
 
-    def _list_scene_files(self, scene_name):
+    def _list_scene_files(self, args, scene_name):
         files = {}
-        scene_graph_path = join(self.dataset_folder, "SceneGraphs_real_classes_pt", scene_name)
+        scene_graph_path = join(self.dataset_folder, args.graph_dataset_name, scene_name)
         scene_image_path = join(self.dataset_folder, "scenes", scene_name, "sequence")
 
         if "image" in self.modalities:
@@ -918,8 +1039,8 @@ class BaseDataset(data.Dataset):
         logging.warning("\n".join(lines))
         return False
 
-    def _build_items_for_scene(self, scene_name):
-        files = self._list_scene_files(scene_name)
+    def _build_items_for_scene(self, args, scene_name):
+        files = self._list_scene_files(args, scene_name)
 
         if not self._validate_scene_alignment(files, scene_name):
             return []
@@ -1252,7 +1373,7 @@ class TripletsDataset(BaseDataset):
             batch_size=args.infer_batch_size,
             shuffle=False,
             pin_memory=(args.device == "cuda"),
-            collate_fn=collate_fn,
+            collate_fn=lambda batch: collate_fn(batch, args.in_dim_graph, args.edge_attr_dim),
         )
 
         if model is not None:

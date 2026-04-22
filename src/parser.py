@@ -37,6 +37,8 @@ def parse_arguments():
     parser.add_argument("--registers", action='store_true', help="_")
     parser.add_argument("--features_dim", type=int, default=256, help="_")
     parser.add_argument("--in_dim_graph", type=int, default=4, help="_")
+    parser.add_argument("--edge_attr_dim", type=int, default=10, help="_")
+    parser.add_argument("--graph_rotate", type=bool, default=False, help="_")
     parser.add_argument("--soft_positives_radius", type=float, default=0.5, help="_")
     # Initialization parameters
     parser.add_argument("--seed", type=int, default=0)
@@ -66,11 +68,11 @@ def parse_arguments():
     parser.add_argument("--node_emb_dim", type=int, default=128, help="_")
     parser.add_argument("--edge_emb_dim", type=int, default=128, help="_")
     parser.add_argument("--graph_layers", type=int, default=1, help="_")
-    parser.add_argument("--num_obj_classes", type=int, default=528 + 1, help="_")
+    parser.add_argument("--num_obj_classes", type=int, default=528 + 1, help="_")   
     parser.add_argument("--num_edge_classes", type=int, default=41, help="_")
     parser.add_argument("--graph_proj", type=int, default=256, help="_")
     parser.add_argument("--graph_dropout", type=float, default=0.1, help="_")
-    parser.add_argument("--graph_lr", type=int, default=0.00001, help="_")
+    parser.add_argument("--graph_lr", type=float, default=0.00001, help="_")
 
 
     # Data augmentation parameters
@@ -86,11 +88,12 @@ def parse_arguments():
     parser.add_argument("--random_resized_crop", type=float, default=None, help="_")
     parser.add_argument("--random_rotation", type=float, default=None, help="_")
     # Paths parameters
-    parser.add_argument("--datasets_folder", type=str, default="/mnt/external_usb_hdd/6YL/Datasets", help="Path with all datasets")
+    parser.add_argument("--datasets_folder", type=str, default="/workspace/tmp/dataset/", help="Path with all datasets")
     parser.add_argument("--dataset_name", type=str, default="3RScan", help="Relative path of the dataset")
+    parser.add_argument("--graph_dataset_name", type=str, default="SceneGraphs_real_classes_pt_rot_compact", help="_")
     parser.add_argument("--pca_dataset_folder", type=str, default=None,
                         help="Path with images to be used to compute PCA (ie: pitts30k/images/train")
-    parser.add_argument("--save_dir", type=str, default="/home/pinkin_ek/projects/Scene_graph_localization/data",
+    parser.add_argument("--save_dir", type=str, default="/workspace/tmp/projects/Scene_graph_localization/data",
                         help="Folder name of the current run (saved in ./logs/)")
     args, unknown = parser.parse_known_args()
     if unknown:

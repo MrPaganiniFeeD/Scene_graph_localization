@@ -100,14 +100,14 @@ logging.info(f"Test set: {test_ds}")
 
 #### normalizer graph
 if args.mode == "graph" or args.mode == "fusion":
-    graph_normalizer = network.EdgeAttrNormalizer(log_indices=[5])
+    graph_normalizer = network.EdgeAttrNormalizer()
     for item in triplets_ds.items:
         graph_path = item["graph"]
         if graph_path is None:
             continue
         
         g = torch.load(graph_path, map_location="cpu")
-        g = datasets_ws._sanitize_graph_obj(g, feat_dim=args.in_dim_graph)
+        g = datasets_ws._sanitize_graph_obj(g, args.in_dim_graph, args.edge_attr_dim)
 
         if isinstance(g, list):
             for gi in g:
@@ -118,7 +118,8 @@ if args.mode == "graph" or args.mode == "fusion":
                 graph_normalizer.update(g.edge_attr)
 
 graph_normalizer.finalize()
-# util.save_edge_normalizer(args, graph_normalizer.mean, graph_normalizer.std, graph_normalizer.log_indices, "edge_normalizer.pt")
+util.save_edge_normalizer(args, graph_normalizer.mean, graph_normalizer.std, graph_normalizer.log_indices, "edge_normalizer.pt")
+util.save_networks(args)
 
 triplets_ds.loader.edge_normalizer = graph_normalizer
 test_ds.loader.edge_normalizer = graph_normalizer
@@ -207,10 +208,11 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
         triplets_ds.compute_triplets(args, model)
         triplets_ds.is_inference = False
         
+        
         triplets_dl = DataLoader(dataset=triplets_ds, num_workers=args.num_workers,
                                 batch_size=args.train_batch_size,
                                 shuffle=True,
-                                collate_fn=datasets_ws.collate_fn,
+                                collate_fn=lambda batch: datasets_ws.collate_fn(batch, args.in_dim_graph, args.edge_attr_dim),
                                 pin_memory=(args.device=="cuda"),
                                 drop_last=True)
         
@@ -344,7 +346,7 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
         logging.info(f"Not improved: {not_improved_num} / {args.patience}: best R@5 = {best_r5:.1f}, current R@5 = {(recalls['R@5']):.1f}")
         if not_improved_num >= args.patience:
             logging.info(f"Performance did not improve for {not_improved_num} epochs. Stop training.")
-            breaks
+            break
 
 
 

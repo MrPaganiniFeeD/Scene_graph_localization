@@ -52,7 +52,9 @@ model = network.MultiModalVPRGraphEncoder(
 
 ).to(args.device)
 
-checkpoint = torch.load("/workspace/tmp/projects/Scene_graph_localization/data/2026-04-19_22-01-57/best_model.pth", map_location='cpu')
+path_test = "/workspace/tmp/projects/Scene_graph_localization/data/2026-04-21_19-16-48"
+
+checkpoint = torch.load(os.path.join(path_test, "best_model.pth"), map_location='cpu')
 
 model.load_state_dict(checkpoint["model_state_dict"])
 # print("model", model)
@@ -68,7 +70,7 @@ if args.resume != None:
 ######################################### DATASETS #########################################
 test_ds = datasets_ws.BaseDataset(args, args.datasets_folder, args.dataset_name, "test")
 norm_ckpt = torch.load(
-    "/workspace/tmp/projects/Scene_graph_localization/data/2026-04-19_22-01-57/edge_normalizer.pt",
+    os.path.join(path_test, "edge_normalizer.pt"),
     map_location="cpu"
 )
 

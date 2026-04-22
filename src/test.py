@@ -14,7 +14,7 @@ def _build_subset_loader(dataset, indices, args, shuffle=False):
         batch_size=args.infer_batch_size,
         shuffle=shuffle,
         num_workers=args.num_workers,
-        collate_fn=datasets_ws.collate_fn,
+        collate_fn=lambda batch: datasets_ws.collate_fn(batch, args.in_dim_graph, args.edge_attr_dim),
         pin_memory=(args.device == "cuda"),
         drop_last=False,
     )

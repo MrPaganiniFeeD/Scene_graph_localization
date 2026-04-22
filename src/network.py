@@ -42,28 +42,56 @@ class VPRGraphEncoder(nn.Module):
                  node_emb_dim=64,
                  num_edge_classes=None,
                  edge_emb_dim=64,
+                 edge_cont_dim=10,
                  dropout=0.1):
         super().__init__()
 
         self.use_node_class = (num_node_classes is not None)
         self.use_edge_label = (num_edge_classes is not None)
+        self.edge_alpha = nn.Parameter(torch.tensor(0.0))
+        self.edge_cont_ln = nn.LayerNorm(hidden_dim)
+        self.edge_lbl_ln = nn.LayerNorm(hidden_dim)
 
         self.node_emb = None
         if self.use_node_class:
             self.node_emb = nn.Embedding(num_node_classes, node_emb_dim)
             nn.init.xavier_uniform_(self.node_emb.weight)
 
-        
         self.edge_emb = None
-        self.edge_proj = None
         if self.use_edge_label:
             self.edge_emb = nn.Embedding(num_edge_classes, edge_emb_dim)
             nn.init.xavier_uniform_(self.edge_emb.weight)
-            self.edge_proj = nn.Sequential(
+
+        self.edge_proj = None
+
+        self.edge_cont_mlp = nn.Sequential(
+            nn.Linear(edge_cont_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+        self.edge_gate = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.Sigmoid()
+        )
+
+        if self.use_edge_label:
+            self.edge_label_proj = nn.Sequential(
                 nn.Linear(edge_emb_dim, hidden_dim),
                 nn.ReLU(inplace=True),
                 nn.Linear(hidden_dim, hidden_dim),
             )
+
+            self.edge_fuse = nn.Sequential(
+                nn.Linear(hidden_dim * 2, hidden_dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(hidden_dim, hidden_dim)
+            )
+        else:
+            self.edge_label_proj = None
+            self.edge_fuse = None
+
 
         eff_in_dim = in_dim + (node_emb_dim if self.use_node_class else 0)
 
@@ -97,7 +125,6 @@ class VPRGraphEncoder(nn.Module):
     def forward(self, batch):
         x = batch.x
 
-        #print("batch in forward", batch)
         if self.use_node_class and hasattr(batch, 'node_class') and batch.node_class is not None:
             node_cls = batch.node_class.long().to(x.device)
             node_emb = self.node_emb(node_cls)
@@ -106,10 +133,24 @@ class VPRGraphEncoder(nn.Module):
         h = self.input_mlp(x)
 
         edge_attr = None
+        if hasattr(batch, 'edge_attr') and batch.edge_attr is not None:
+            edge_attr_cont = batch.edge_attr[:,:].float().to(x.device) 
+            edge_cont = self.edge_cont_mlp(edge_attr_cont)
+        else:
+            edge_cont = None
+
         if self.use_edge_label and hasattr(batch, 'edge_label') and batch.edge_label is not None:
             edge_label = batch.edge_label.long().to(x.device)
-            edge_attr = self.edge_emb(edge_label)
-            edge_attr = self.edge_proj(edge_attr)
+            edge_lbl = self.edge_emb(edge_label)
+            edge_lbl = self.edge_label_proj(edge_lbl)
+
+            if edge_cont is not None:
+                # edge_attr = self.edge_fuse(torch.cat([edge_cont, edge_lbl], dim=1))
+                # gate = self.edge_gate(torch.cat([edge_cont, edge_lbl], dim=1))
+                # edge_attr = gate * edge_cont + (1 - gate) * edge_lbl
+                edge_attr = edge_lbl + self.edge_alpha * edge_cont
+            else:
+                edge_attr = edge_lbl
 
         for conv in self.convs:
             h = conv(h, batch.edge_index, edge_attr)
