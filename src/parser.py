@@ -90,7 +90,7 @@ def parse_arguments():
     # Paths parameters
     parser.add_argument("--datasets_folder", type=str, default="/workspace/tmp/dataset/", help="Path with all datasets")
     parser.add_argument("--dataset_name", type=str, default="3RScan", help="Relative path of the dataset")
-    parser.add_argument("--graph_dataset_name", type=str, default="SceneGraphs_real_classes_pt_rot_compact", help="_")
+    parser.add_argument("--graph_dataset_name", type=str, default="SceneGraphs_real_classes_pt_compact", help="_")
     parser.add_argument("--pca_dataset_folder", type=str, default=None,
                         help="Path with images to be used to compute PCA (ie: pitts30k/images/train")
     parser.add_argument("--save_dir", type=str, default="/workspace/tmp/projects/Scene_graph_localization/data",

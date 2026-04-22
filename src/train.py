@@ -117,8 +117,8 @@ if args.mode == "graph" or args.mode == "fusion":
             if g.edge_attr is not None and g.edge_attr.numel() > 0:
                 graph_normalizer.update(g.edge_attr)
 
-graph_normalizer.finalize()
-util.save_edge_normalizer(args, graph_normalizer.mean, graph_normalizer.std, graph_normalizer.log_indices, "edge_normalizer.pt")
+    graph_normalizer.finalize()
+    util.save_edge_normalizer(args, graph_normalizer.mean, graph_normalizer.std, graph_normalizer.log_indices, "edge_normalizer.pt")
 util.save_networks(args)
 
 triplets_ds.loader.edge_normalizer = graph_normalizer
@@ -223,7 +223,7 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
         print(len(triplets_dl))
         for batch_samples, triplets_local_indexes, triplets_global_indexes in tqdm(triplets_dl, ncols=100):
             # Compute features of all images (images contains queries, positives and negatives)
-            if epoch_num == 0 and loop_num == 0 and False:
+            if epoch_num == 0 and loop_num == 0:
                 visualize.visualize_triplet_images(
                     dataset=triplets_ds,
                     triplets_global_indexes=triplets_global_indexes,
