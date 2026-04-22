@@ -961,9 +961,11 @@ class BaseDataset(data.Dataset):
                         print(f"[SKIP] query scene '{query_scene}' due to modality mismatch.")
 
             self.ref_to_db_indices = {}
+            self.db_idx_to_ref = {}
             for idx, item in enumerate(self.database_items):
                 ref = self.scan_to_ref.get(item["scene"], item["scene"])
                 self.ref_to_db_indices.setdefault(ref, []).append(idx)
+                self.db_idx_to_ref[idx] = ref 
 
         self.database_num = len(self.database_items)
         self.queries_num = len(self.queries_items)
@@ -1444,8 +1446,13 @@ class TripletsDataset(BaseDataset):
         best_positive_index = positives_indexes[best_positive_num[0][0]]
         return int(best_positive_index)
 
-    def get_hardest_negatives_indexes(self, args, cache, query_features, neg_samples):
+    def get_hardest_negatives_indexes(self, args, cache, query_features, neg_samples, query_ref):
         neg_samples = np.asarray(neg_samples, dtype=np.int32).reshape(-1)
+        if len(neg_samples) == 0:
+            return np.empty((0,), dtype=np.int32)
+
+        mask = [self.db_idx_to_ref[idx] != query_ref for idx in neg_samples]
+        neg_samples = neg_samples[mask]
         if len(neg_samples) == 0:
             return np.empty((0,), dtype=np.int32)
 
@@ -1544,7 +1551,14 @@ class TripletsDataset(BaseDataset):
         for query_index in sampled_queries_indexes:
             query_features = self.get_query_features(query_index, cache)
             best_positive_index = self.get_best_positive_index(args, query_index, cache, query_features)
-            neg_indexes = self._complete_negative_indexes(query_index)
+
+            soft_positives = self.soft_positives_per_query[query_index]
+            neg_candidates = np.setdiff1d(sampled_database_indexes, soft_positives, assume_unique=True)
+
+            query_scene = self.queries_items[query_index]["scene"]
+            query_ref = self.scan_to_ref.get(query_scene, query_scene)
+
+            neg_indexes = self.get_hardest_negatives_indexes(args, cache, query_features, neg_candidates, query_ref)
             self.triplets_global_indexes.append((query_index, best_positive_index, *neg_indexes))
 
         self.triplets_global_indexes = torch.tensor(self.triplets_global_indexes, dtype=torch.long)
