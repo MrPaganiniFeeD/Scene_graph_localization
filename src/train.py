@@ -119,10 +119,11 @@ if args.mode == "graph" or args.mode == "fusion":
 
     graph_normalizer.finalize()
     util.save_edge_normalizer(args, graph_normalizer.mean, graph_normalizer.std, graph_normalizer.log_indices, "edge_normalizer.pt")
-util.save_networks(args)
+    triplets_ds.loader.edge_normalizer = graph_normalizer
+    test_ds.loader.edge_normalizer = graph_normalizer
 
-triplets_ds.loader.edge_normalizer = graph_normalizer
-test_ds.loader.edge_normalizer = graph_normalizer
+
+util.save_networks(args)
 
 compute_edge_attr_stats_from_dataset(triplets_ds, max_items=1000)
 
