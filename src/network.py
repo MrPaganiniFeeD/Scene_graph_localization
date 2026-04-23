@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.data import Data, Batch, HeteroData
-from torch_geometric.nn import GCNConv, GINEConv, global_mean_pool, global_max_pool
+from torch_geometric.nn import GATv2Conv, GCNConv, GINEConv, global_mean_pool, global_max_pool
 
 
 def _extract_embedding(x):
@@ -42,8 +42,9 @@ class VPRGraphEncoder(nn.Module):
                  node_emb_dim=64,
                  num_edge_classes=None,
                  edge_emb_dim=64,
-                 edge_cont_dim=10,
-                 dropout=0.1):
+                 edge_cont_dim=17,
+                 dropout=0.1,
+                 head=4):
         super().__init__()
 
         self.use_node_class = (num_node_classes is not None)
@@ -148,12 +149,161 @@ class VPRGraphEncoder(nn.Module):
                 # edge_attr = self.edge_fuse(torch.cat([edge_cont, edge_lbl], dim=1))
                 # gate = self.edge_gate(torch.cat([edge_cont, edge_lbl], dim=1))
                 # edge_attr = gate * edge_cont + (1 - gate) * edge_lbl
-                edge_attr = edge_lbl + self.edge_alpha * edge_cont
+                edge_attr = edge_lbl # + self.edge_alpha * edge_cont
             else:
                 edge_attr = edge_lbl
 
         for conv in self.convs:
             h = conv(h, batch.edge_index, edge_attr)
+            h = self.act(h)
+            h = self.drop(h)
+
+        hg_mean = global_mean_pool(h, batch.batch)
+        hg_max = global_max_pool(h, batch.batch)
+        hg = torch.cat([hg_mean, hg_max], dim=1)
+
+        z = self.proj(hg)
+        z = F.normalize(z, p=2, dim=1)
+        return z
+
+    @property
+    def out_dim(self):
+        return self._proj_dim
+
+class GATGraphEncoder(nn.Module):
+    def __init__(self,
+                 in_dim,
+                 hidden_dim=256,
+                 n_layers=2,
+                 proj_dim=64,
+                 num_node_classes=None,
+                 node_emb_dim=64,
+                 num_edge_classes=None,
+                 edge_emb_dim=64,
+                 edge_cont_dim=17,
+                 dropout=0.1,
+                 heads=4):
+        super().__init__()
+
+        self.use_node_class = (num_node_classes is not None)
+        self.use_edge_label = (num_edge_classes is not None)
+        self.edge_alpha = nn.Parameter(torch.tensor(0.0))
+        self.edge_cont_ln = nn.LayerNorm(hidden_dim)
+        self.edge_lbl_ln = nn.LayerNorm(hidden_dim)
+
+        self.node_emb = None
+        if self.use_node_class:
+            self.node_emb = nn.Embedding(num_node_classes, node_emb_dim)
+            nn.init.xavier_uniform_(self.node_emb.weight)
+
+        self.edge_emb = None
+        if self.use_edge_label:
+            self.edge_emb = nn.Embedding(num_edge_classes, edge_emb_dim)
+            nn.init.xavier_uniform_(self.edge_emb.weight)
+
+        self.edge_proj = None
+
+        self.edge_cont_mlp = nn.Sequential(
+            nn.Linear(edge_cont_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+        self.edge_gate = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.Sigmoid()
+        )
+
+        if self.use_edge_label:
+            self.edge_label_proj = nn.Sequential(
+                nn.Linear(edge_emb_dim, hidden_dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(hidden_dim, hidden_dim),
+            )
+
+            self.edge_fuse = nn.Sequential(
+                nn.Linear(hidden_dim * 2, hidden_dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(hidden_dim, hidden_dim)
+            )
+        else:
+            self.edge_label_proj = None
+            self.edge_fuse = None
+
+
+        eff_in_dim = in_dim + (node_emb_dim if self.use_node_class else 0)
+
+        self.input_mlp = nn.Sequential(
+            nn.Linear(eff_in_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(inplace=True)
+        )
+
+        self.convs = nn.ModuleList([
+            GATv2Conv(
+                in_channels=hidden_dim,
+                out_channels=hidden_dim,
+                heads=heads,
+                concat=False,
+                dropout=dropout,
+                edge_dim=hidden_dim,
+                add_self_loops=False,
+                residual=True,
+            )
+            for _ in range(n_layers)
+        ])
+
+
+        self.act = nn.ReLU(inplace=True)
+        self.drop = nn.Dropout(p=dropout)
+
+
+        self.pool_out_dim = hidden_dim * 2
+        self.proj = nn.Sequential(
+            nn.Linear(self.pool_out_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, proj_dim)
+        )
+        self._proj_dim = proj_dim
+
+    def forward(self, batch, return_attn=False):
+        x = batch.x
+
+        if self.use_node_class and hasattr(batch, 'node_class') and batch.node_class is not None:
+            node_cls = batch.node_class.long().to(x.device)
+            node_emb = self.node_emb(node_cls)
+            x = torch.cat([x, node_emb], dim=1)
+
+        h = self.input_mlp(x)
+
+        edge_attr = None
+        if hasattr(batch, 'edge_attr') and batch.edge_attr is not None:
+            edge_attr_cont = batch.edge_attr[:,:].float().to(x.device) 
+            edge_cont = self.edge_cont_mlp(edge_attr_cont)
+        else:
+            edge_cont = None
+
+        if self.use_edge_label and hasattr(batch, 'edge_label') and batch.edge_label is not None:
+            edge_label = batch.edge_label.long().to(x.device)
+            edge_lbl = self.edge_emb(edge_label)
+            edge_lbl = self.edge_label_proj(edge_lbl)
+
+            if edge_cont is not None:
+                # edge_attr = self.edge_fuse(torch.cat([edge_cont, edge_lbl], dim=1))
+                # gate = self.edge_gate(torch.cat([edge_cont, edge_lbl], dim=1))
+                edge_attr = edge_lbl + self.edge_alpha * edge_cont
+            else:
+                edge_attr = edge_lbl
+        
+        attn_debug = None
+        for i, conv in enumerate(self.convs):
+            if return_attn and i == len(self.convs) - 1:
+                h, attn_debug = conv(h, batch.edge_index, edge_attr, return_attention_weights=True)
+            else:
+                h = conv(h, batch.edge_index, edge_attr)
+
             h = self.act(h)
             h = self.drop(h)
 
@@ -199,7 +349,6 @@ class MultiModalVPRGraphEncoder(nn.Module):
             
             
             if train_only_aggregator:
-                # Разморозить только aggregator внутри image_encoder
                 """
                 if not hasattr(self.image_encoder, "aggregator"):
                     raise AttributeError("image_encoder has no attribute 'aggregator'")

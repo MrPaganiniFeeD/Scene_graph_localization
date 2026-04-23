@@ -19,7 +19,6 @@ import util
 import commons
 import warnings
 import test
-import test_patched
 warnings.filterwarnings('ignore')
 import os
 
@@ -138,12 +137,25 @@ graph_encoder = network.VPRGraphEncoder(
     edge_emb_dim=args.edge_emb_dim,
     proj_dim=args.graph_proj,
     dropout=args.graph_dropout).to(args.device)
+
+GAT_graph_encoder = network.GATGraphEncoder(
+    in_dim=args.in_dim_graph,
+    hidden_dim=args.graph_hidden_dim,
+    n_layers=args.graph_layers,
+    num_node_classes=args.num_obj_classes, 
+    node_emb_dim=args.node_emb_dim,
+    num_edge_classes=args.num_edge_classes,
+    edge_emb_dim=args.edge_emb_dim,
+    proj_dim=args.graph_proj,
+    edge_cont_dim=args.edge_attr_dim,
+    dropout=args.graph_dropout,
+    heads=args.graph_head).to(args.device)
     
 megaloc = torch.hub.load("gmberton/MegaLoc", "get_trained_model")
 image_encoder = megaloc.to(args.device)
 
 model = network.MultiModalVPRGraphEncoder(
-    graph_encoder=graph_encoder,
+    graph_encoder=GAT_graph_encoder,
     image_encoder=image_encoder,
     image_out_dim=8448,
     graph_out_dim=256,
