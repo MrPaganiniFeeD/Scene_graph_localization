@@ -342,10 +342,7 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
         "recalls": recalls,
         "best_r5": best_r5,
         "not_improved_num": not_improved_num,
-        "mode": args.mode, 
-        "mean": graph_normalizer.mean,
-        "std": graph_normalizer.std,
-        "log_indices": graph_normalizer.log_indices,
+        "mode": args.mode
     }, is_best, filename="last_model.pth")
     
     
