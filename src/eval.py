@@ -36,12 +36,25 @@ graph_encoder = network.VPRGraphEncoder(
     edge_emb_dim=args.edge_emb_dim,
     proj_dim=args.graph_proj,
     dropout=args.graph_dropout).to(args.device)
+
+GAT_graph_encoder = network.GATGraphEncoder(
+    in_dim=args.in_dim_graph,
+    hidden_dim=args.graph_hidden_dim,
+    n_layers=args.graph_layers,
+    num_node_classes=args.num_obj_classes, 
+    node_emb_dim=args.node_emb_dim,
+    num_edge_classes=args.num_edge_classes,
+    edge_emb_dim=args.edge_emb_dim,
+    proj_dim=args.graph_proj,
+    edge_cont_dim=args.edge_attr_dim,
+    dropout=args.graph_dropout,
+    heads=args.graph_head).to(args.device)
     
 megaloc = torch.hub.load("gmberton/MegaLoc", "get_trained_model")
 image_encoder = megaloc.to(args.device)
 
 model = network.MultiModalVPRGraphEncoder(
-    graph_encoder=graph_encoder,
+    graph_encoder=GAT_graph_encoder,
     image_encoder=image_encoder,
     image_out_dim=8448,
     graph_out_dim=256,
@@ -52,7 +65,7 @@ model = network.MultiModalVPRGraphEncoder(
 
 ).to(args.device)
 
-path_test = "/workspace/tmp/projects/Scene_graph_localization/data/2026-04-21_19-16-48"
+path_test = "/workspace/tmp/projects/Scene_graph_localization/data/2026-04-22_18-53-25"
 
 checkpoint = torch.load(os.path.join(path_test, "best_model.pth"), map_location='cpu')
 
@@ -69,18 +82,19 @@ if args.resume != None:
 
 ######################################### DATASETS #########################################
 test_ds = datasets_ws.BaseDataset(args, args.datasets_folder, args.dataset_name, "test")
-norm_ckpt = torch.load(
-    os.path.join(path_test, "edge_normalizer.pt"),
-    map_location="cpu"
-)
+if args.mode == "fusion" or args.mode == "graph":
+    norm_ckpt = torch.load(
+        os.path.join(path_test, "edge_normalizer.pt"),
+        map_location="cpu"
+    )
 
-graph_normalizer = network.EdgeAttrNormalizer(
-    log_indices=norm_ckpt["log_indices"]
-)
-graph_normalizer.mean = norm_ckpt["mean"]
-graph_normalizer.std = norm_ckpt["std"]
+    graph_normalizer = network.EdgeAttrNormalizer(
+        log_indices=norm_ckpt["log_indices"]
+    )
+    graph_normalizer.mean = norm_ckpt["mean"]
+    graph_normalizer.std = norm_ckpt["std"]
 
-test_ds.loader.edge_normalizer = graph_normalizer
+    test_ds.loader.edge_normalizer = graph_normalizer
 logging.info(f"Test set: {test_ds}")
 
 ######################################### TEST on TEST SET #########################################

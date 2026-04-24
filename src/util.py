@@ -4,6 +4,7 @@ import torch
 import shutil
 import logging
 import numpy as np
+import os
 from os.path import join
 from sklearn.decomposition import PCA
 import datasets_ws
@@ -14,9 +15,6 @@ def save_checkpoint(args, state, is_best, filename):
     model_path = join(args.save_dir, filename)
     normalizer_path = join(args.save_dir, "edge_normalizer.pt")
     torch.save(state, model_path)
-    torch.save({"mean": state["mean"],
-    "std": state["std"],
-    "log_indices": state["log"]})
     save_args_yaml(args, args.save_dir)
     if is_best:
         shutil.copyfile(model_path, join(args.save_dir, "best_model.pth"))
@@ -27,6 +25,11 @@ def save_edge_normalizer(args, mean, std, log_indices, filename):
     torch.save({"mean": mean,
                 "std": std,
                 "log_indices": log_indices}, normalizer_path)
+
+def save_networks(args):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_file_path = join(script_dir, 'network.py')
+    shutil.copy(output_file_path, args.save_dir)
     
 def save_args_yaml(args, save_dir):
     with open(join(save_dir, 'args.yaml'), 'w') as f:

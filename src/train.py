@@ -156,15 +156,13 @@ image_encoder = megaloc.to(args.device)
 
 model = network.MultiModalVPRGraphEncoder(
     graph_encoder=GAT_graph_encoder,
-    image_encoder=image_encoder,
+    image_encoder=None,
     image_out_dim=8448,
     graph_out_dim=256,
     fusion_dim=8448,
     normalize=True,
     graph_fusion_scale=0.05,
-    freeze_image_encoder=True,
-
-).to(args.device)
+    freeze_image_encoder=True).to(args.device)
 
 ### Setup Optimizer and Loss
 if args.optim == "adam":
@@ -231,12 +229,11 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
         
         model = model.train()
         print(len(triplets_ds), "Количество триплетов")
-        # images shape: (train_batch_size*4)*3*H*W
-        # print(triplets_ds[0], "triplets_ds[0]")
         print(len(triplets_dl))
+        triplets_number = 0
         for batch_samples, triplets_local_indexes, triplets_global_indexes in tqdm(triplets_dl, ncols=100):
             # Compute features of all images (images contains queries, positives and negatives)
-            if epoch_num == 0 and loop_num == 0 and False:
+            if epoch_num == 0 and loop_num == 0 and triplets_number == 0:
                 visualize.visualize_triplet_images(
                     dataset=triplets_ds,
                     triplets_global_indexes=triplets_global_indexes,
@@ -312,15 +309,15 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
             batch_loss = total_loss.item()
             epoch_losses = np.append(epoch_losses, batch_loss)
             del total_loss
+            triplets_number += 1
+
         
         
         logging.debug(f"Epoch[{epoch_num:02d}]({loop_num}/{loops_num}): " +
                     f"current batch triplet loss = {batch_loss:.4f}, " +
                     f"average epoch triplet loss = {epoch_losses.mean():.4f}")
         recalls, recalls_str, _ = test.test(args, test_ds, model)
-        #recalls_dist, recalls_str_dist, _ = test_patched.test(args, test_ds, graph_encoder)
         logging.info(f"Recalls on val set {test_ds}: {recalls_str}")
-        #logging.info(f"Recalls on val set (radius=2.0m) {test_ds}: {recalls_str_dist}")
 
     
     logging.info(f"Finished epoch {epoch_num:02d} in {str(datetime.now() - epoch_start_time)[:-7]}, "
