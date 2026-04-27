@@ -154,6 +154,15 @@ GAT_graph_encoder = network.GATGraphEncoder(
 megaloc = torch.hub.load("gmberton/MegaLoc", "get_trained_model")
 image_encoder = megaloc.to(args.device)
 
+
+### LOAD MODEL
+if args.load_state_mode == "graph":
+    gat_graph_encoder = util.load_model(args, args.load_model)
+elif args.load_state_mode == "image":
+    pass
+elif args.load_state_mode == "multimodal":
+    pass
+
 model = network.MultiModalVPRGraphEncoder(
     graph_encoder=GAT_graph_encoder,
     image_encoder=None,
@@ -334,12 +343,17 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
     
     # Save checkpoint, which contains all training parameters
     util.save_checkpoint(args, {"epoch_num": epoch_num,
-        "model_state_dict": model.state_dict(),
+        "multimodal_state_dict": model.state_dict(),
+        "graph_state_dict": model.graph_encoder.state_dict() if model.graph_encoder != None else None,
+        "image_state_dict": model.image.state_dict() if model.image_encoder != None else None,
         "optimizer_state_dict": optimizer.state_dict(),
         "recalls": recalls,
         "best_r5": best_r5,
         "not_improved_num": not_improved_num,
-        "mode": args.mode
+        "mode": args.mode,
+        "graph_init_args": (model.graph_encoder.init_args if args.load_state_mode == "graph" else None),
+        "multimodal_init_args": (model.init_args if args.load_state_mode == "mulitmodal" else None),
+        "image_init_args": (model.image_encoder.init_args if args.load_state_mode == "iamge" else None)
     }, is_best, filename="last_model.pth")
     
     

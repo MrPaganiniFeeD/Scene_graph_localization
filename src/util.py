@@ -2,9 +2,12 @@ import yaml
 import re
 import torch
 import shutil
+import importlib
 import logging
 import numpy as np
+import importlib.util
 import os
+from argparse import Namespace
 from os.path import join
 from sklearn.decomposition import PCA
 import datasets_ws
@@ -34,6 +37,34 @@ def save_networks(args):
 def save_args_yaml(args, save_dir):
     with open(join(save_dir, 'args.yaml'), 'w') as f:
         yaml.dump(vars(args), f, default_flow_style=False)
+
+
+def load_model(args, path):
+    yaml_path = join(path, "args.yaml")
+
+    with open(yaml_path, 'r', encoding='utf-8') as file:
+        args_data = yaml.safe_load(file)
+    load_args = Namespace(**args_data)
+    network_module = load_module_from_path("network", join(path, "network.py"))
+    checkpoint = torch.load(join(path, "best_model.pth"), map_location='cpu')
+    state_dict_model = ""
+
+    if args.load_state_mode == "graph":
+        model_class = getattr(network_module, load_args.graph_model_name)
+        init_args = checkpoint["graph_init_args"]
+        state_dict_model = "graph_state_dict"
+    elif args.load_state_mode == "image":
+        model_class = getattr(network_module, load_args.image_model_name)
+        init_args = checkpoint["image_init_args"]
+        state_dict_model = "image_state_dict"
+    elif args.load_state_mode == "multimodal":
+        model_class = getattr(network_module, load_args.multimodel_model_name)
+        init_args = checkpoint["multimodal_init_args"]
+        state_dict_model = "multimodal_state_dict"
+    
+    model = model_class(**init_args)
+    model.load_state_dict(checkpoint[state_dict_model])
+    return model
 
 
 def resume_train(args, model, optimizer=None, strict=False):
@@ -67,3 +98,9 @@ def compute_pca(args, model, pca_dataset_folder, full_features_dim):
     pca.fit(pca_features)
     return pca
 
+
+def load_module_from_path(module_name, file_path):
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module

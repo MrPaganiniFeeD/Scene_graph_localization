@@ -1,0 +1,1183 @@
+2026-04-27 17:55:19   Arguments: Namespace(train_batch_size=8, infer_batch_size=16, criterion='triplet', margin=0.5, epochs_num=50, patience=20, lr=1e-05, optim='adam', loss_reduction='sum', mode='graph', cache_refresh_rate=50000, queries_per_epoch=50000, negs_num_per_query=2, neg_samples_num=4000, mining='partial', load_state_mode='None', features_dim=512, in_dim_graph=4, edge_attr_dim=10, graph_rotate=False, soft_positives_radius=0.5, seed=0, resume=None, visualize=True, device='cuda', num_workers=1, resize=[322, 322], dense_feature_map_size=[61, 61, 128], test_method='hard_resize', val_positive_dist_threshold=25, train_positives_dist_threshold=10, recall_values=[1, 5, 10, 25], rerank_num=100, graph_hidden_dim=512, node_emb_dim=128, edge_emb_dim=128, graph_layers=1, num_obj_classes=529, num_edge_classes=41, graph_proj=512, graph_dropout=0.1, graph_lr=1e-05, graph_head=4, modalities=['pose', 'graph'], datasets_folder='/mnt/external_usb_hdd/6YL/Datasets', dataset_name='3RScan', graph_dataset_name='SceneGraphs_real_classes_pt_rot_compact', save_dir='logs/./data/2026-04-27_17-55-19', load_model='./data/2026-04-27_14-03-02', graph_model_name='GATGraphEncoder', multimodel_model_name='MultiModalVPRGraphEncoder', image_mdoel_name=None)
+2026-04-27 17:55:19   The outputs are being saved in logs/./data/2026-04-27_17-55-19
+2026-04-27 17:55:19   Using 1 GPUs and 6 CPUs
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='02b33dfb-be2b-2d54-92d2-cd012b2b3c40'):
+  Reference modality: 'poses' -> 143 items.
+  - poses: 143
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000140.pose.txt', 'frame-000141.pose.txt', 'frame-000142.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='fcf66d9e-622d-291c-84c2-bb23dfe31327'):
+  Reference modality: 'poses' -> 114 items.
+  - poses: 114
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000111.pose.txt', 'frame-000112.pose.txt', 'frame-000113.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='02b33df9-be2b-2d54-9062-1253be3ce186'):
+  Reference modality: 'poses' -> 114 items.
+  - poses: 114
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000111.pose.txt', 'frame-000112.pose.txt', 'frame-000113.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='02b33dfd-be2b-2d54-91d2-55454852009e'):
+  Reference modality: 'poses' -> 108 items.
+  - poses: 108
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000105.pose.txt', 'frame-000106.pose.txt', 'frame-000107.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='02b33e01-be2b-2d54-93fb-4145a709cec5'):
+  Reference modality: 'poses' -> 175 items.
+  - poses: 175
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000172.pose.txt', 'frame-000173.pose.txt', 'frame-000174.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='fcf66d8a-622d-291c-8429-0e1109c6bb26'):
+  Reference modality: 'poses' -> 219 items.
+  - poses: 219
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000216.pose.txt', 'frame-000217.pose.txt', 'frame-000218.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='fcf66d88-622d-291c-871f-699b2d063630'):
+  Reference modality: 'poses' -> 13 items.
+  - poses: 13
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000010.pose.txt', 'frame-000011.pose.txt', 'frame-000012.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='02b33e03-be2b-2d54-9129-5d28efdd68fa'):
+  Reference modality: 'poses' -> 150 items.
+  - poses: 150
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000147.pose.txt', 'frame-000148.pose.txt', 'frame-000149.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='0958220d-e2c2-2de1-9710-c37018da1883'):
+  Reference modality: 'poses' -> 192 items.
+  - poses: 192
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000189.pose.txt', 'frame-000190.pose.txt', 'frame-000191.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='0958220b-e2c2-2de1-96bc-739f09c1e8f8'):
+  Reference modality: 'poses' -> 189 items.
+  - poses: 189
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000186.pose.txt', 'frame-000187.pose.txt', 'frame-000188.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582205-e2c2-2de1-9475-1cdac7639e60'):
+  Reference modality: 'poses' -> 212 items.
+  - poses: 212
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000209.pose.txt', 'frame-000210.pose.txt', 'frame-000211.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582207-e2c2-2de1-972c-225d968c2ab4'):
+  Reference modality: 'poses' -> 329 items.
+  - poses: 329
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000326.pose.txt', 'frame-000327.pose.txt', 'frame-000328.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582209-e2c2-2de1-9610-08baed932919'):
+  Reference modality: 'poses' -> 292 items.
+  - poses: 292
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000289.pose.txt', 'frame-000290.pose.txt', 'frame-000291.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582212-e2c2-2de1-9700-fa44b14fbded'):
+  Reference modality: 'poses' -> 157 items.
+  - poses: 157
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000154.pose.txt', 'frame-000155.pose.txt', 'frame-000156.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='0958221b-e2c2-2de1-96b1-6233099811a0'):
+  Reference modality: 'poses' -> 267 items.
+  - poses: 267
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000264.pose.txt', 'frame-000265.pose.txt', 'frame-000266.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582214-e2c2-2de1-956a-64d8da4ba7cc'):
+  Reference modality: 'poses' -> 187 items.
+  - poses: 187
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000184.pose.txt', 'frame-000185.pose.txt', 'frame-000186.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582216-e2c2-2de1-97de-efcab1ef9c43'):
+  Reference modality: 'poses' -> 271 items.
+  - poses: 271
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000268.pose.txt', 'frame-000269.pose.txt', 'frame-000270.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582219-e2c2-2de1-9534-519142703037'):
+  Reference modality: 'poses' -> 221 items.
+  - poses: 221
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000218.pose.txt', 'frame-000219.pose.txt', 'frame-000220.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582225-e2c2-2de1-9564-f6681ef5e511'):
+  Reference modality: 'poses' -> 162 items.
+  - poses: 162
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000159.pose.txt', 'frame-000160.pose.txt', 'frame-000161.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='0958222a-e2c2-2de1-9474-35e601b3682a'):
+  Reference modality: 'poses' -> 203 items.
+  - poses: 203
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000200.pose.txt', 'frame-000201.pose.txt', 'frame-000202.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='0958222d-e2c2-2de1-9732-e2fb990692ef'):
+  Reference modality: 'poses' -> 186 items.
+  - poses: 186
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000183.pose.txt', 'frame-000184.pose.txt', 'frame-000185.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582223-e2c2-2de1-94b6-750684b4f80a'):
+  Reference modality: 'poses' -> 157 items.
+  - poses: 157
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000154.pose.txt', 'frame-000155.pose.txt', 'frame-000156.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582228-e2c2-2de1-953d-f6f1ee4b3699'):
+  Reference modality: 'poses' -> 168 items.
+  - poses: 168
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000165.pose.txt', 'frame-000166.pose.txt', 'frame-000167.pose.txt']
+2026-04-27 17:55:19   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582244-e2c2-2de1-956c-357092d949d1'):
+  Reference modality: 'poses' -> 233 items.
+  - poses: 233
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000230.pose.txt', 'frame-000231.pose.txt', 'frame-000232.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0958222f-e2c2-2de1-94fd-986561908cee'):
+  Reference modality: 'poses' -> 388 items.
+  - poses: 388
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000385.pose.txt', 'frame-000386.pose.txt', 'frame-000387.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0958223d-e2c2-2de1-9683-a76a4276d84c'):
+  Reference modality: 'poses' -> 620 items.
+  - poses: 620
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000617.pose.txt', 'frame-000618.pose.txt', 'frame-000619.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582237-e2c2-2de1-9758-862dc7a3d009'):
+  Reference modality: 'poses' -> 289 items.
+  - poses: 289
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000286.pose.txt', 'frame-000287.pose.txt', 'frame-000288.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582242-e2c2-2de1-942f-d1001cbff56b'):
+  Reference modality: 'poses' -> 242 items.
+  - poses: 242
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000239.pose.txt', 'frame-000240.pose.txt', 'frame-000241.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0958224e-e2c2-2de1-943b-38e36345e2e7'):
+  Reference modality: 'poses' -> 182 items.
+  - poses: 182
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000179.pose.txt', 'frame-000180.pose.txt', 'frame-000181.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582250-e2c2-2de1-9541-3efcbdc2dca4'):
+  Reference modality: 'poses' -> 234 items.
+  - poses: 234
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000231.pose.txt', 'frame-000232.pose.txt', 'frame-000233.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582252-e2c2-2de1-96bf-d41dd0362f39'):
+  Reference modality: 'poses' -> 261 items.
+  - poses: 261
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000258.pose.txt', 'frame-000259.pose.txt', 'frame-000260.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582254-e2c2-2de1-9434-162187eb819e'):
+  Reference modality: 'poses' -> 317 items.
+  - poses: 317
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000314.pose.txt', 'frame-000315.pose.txt', 'frame-000316.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='09582256-e2c2-2de1-9662-c4bc7ca7c497'):
+  Reference modality: 'poses' -> 275 items.
+  - poses: 275
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000272.pose.txt', 'frame-000273.pose.txt', 'frame-000274.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d382-79e2-2212-98b3-641bf9d552c1'):
+  Reference modality: 'poses' -> 340 items.
+  - poses: 340
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000337.pose.txt', 'frame-000338.pose.txt', 'frame-000339.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='dcb6a329-5526-23f1-9d81-7718f682269c'):
+  Reference modality: 'poses' -> 252 items.
+  - poses: 252
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000249.pose.txt', 'frame-000250.pose.txt', 'frame-000251.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='dcb6a32b-5526-23f1-9cbc-3d257a8096fa'):
+  Reference modality: 'poses' -> 107 items.
+  - poses: 107
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000104.pose.txt', 'frame-000105.pose.txt', 'frame-000106.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d386-79e2-2212-9b40-43d081db442a'):
+  Reference modality: 'poses' -> 107 items.
+  - poses: 107
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000104.pose.txt', 'frame-000105.pose.txt', 'frame-000106.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d389-79e2-2212-9b0a-5f0e6f4982b5'):
+  Reference modality: 'poses' -> 201 items.
+  - poses: 201
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000198.pose.txt', 'frame-000199.pose.txt', 'frame-000200.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d38f-79e2-2212-98d2-9b5060e5e9b5'):
+  Reference modality: 'poses' -> 365 items.
+  - poses: 365
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000362.pose.txt', 'frame-000363.pose.txt', 'frame-000364.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d391-79e2-2212-98a3-7e2440884395'):
+  Reference modality: 'poses' -> 207 items.
+  - poses: 207
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000204.pose.txt', 'frame-000205.pose.txt', 'frame-000206.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d399-79e2-2212-99cf-7a3512734bd7'):
+  Reference modality: 'poses' -> 285 items.
+  - poses: 285
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000282.pose.txt', 'frame-000283.pose.txt', 'frame-000284.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d384-79e2-2212-9b18-72b44eb5463f'):
+  Reference modality: 'poses' -> 139 items.
+  - poses: 139
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000136.pose.txt', 'frame-000137.pose.txt', 'frame-000138.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d395-79e2-2212-9b89-83581fad7390'):
+  Reference modality: 'poses' -> 155 items.
+  - poses: 155
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000152.pose.txt', 'frame-000153.pose.txt', 'frame-000154.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d39b-79e2-2212-99ae-830c292cd079'):
+  Reference modality: 'poses' -> 157 items.
+  - poses: 157
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000154.pose.txt', 'frame-000155.pose.txt', 'frame-000156.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d3a1-79e2-2212-9b99-a96495d9f7fe'):
+  Reference modality: 'poses' -> 70 items.
+  - poses: 70
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000067.pose.txt', 'frame-000068.pose.txt', 'frame-000069.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d39d-79e2-2212-99aa-1e95c5b94289'):
+  Reference modality: 'poses' -> 133 items.
+  - poses: 133
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000130.pose.txt', 'frame-000131.pose.txt', 'frame-000132.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d3a3-79e2-2212-9a51-9094be707ec2'):
+  Reference modality: 'poses' -> 99 items.
+  - poses: 99
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000096.pose.txt', 'frame-000097.pose.txt', 'frame-000098.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d3a5-79e2-2212-9a9e-2502a05fa678'):
+  Reference modality: 'poses' -> 97 items.
+  - poses: 97
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000094.pose.txt', 'frame-000095.pose.txt', 'frame-000096.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0ad2d3a7-79e2-2212-9a1b-8737842a24e2'):
+  Reference modality: 'poses' -> 161 items.
+  - poses: 161
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000158.pose.txt', 'frame-000159.pose.txt', 'frame-000160.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7536-8d6f-2d13-8dc2-2f9d7aa62dc4'):
+  Reference modality: 'poses' -> 218 items.
+  - poses: 218
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000215.pose.txt', 'frame-000216.pose.txt', 'frame-000217.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='dc42b36c-8d5c-2d2a-86aa-19a8929361fd'):
+  Reference modality: 'poses' -> 197 items.
+  - poses: 197
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000194.pose.txt', 'frame-000195.pose.txt', 'frame-000196.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7538-8d6f-2d13-8c23-d635c21d0f17'):
+  Reference modality: 'poses' -> 158 items.
+  - poses: 158
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000155.pose.txt', 'frame-000156.pose.txt', 'frame-000157.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac753c-8d6f-2d13-8e27-e0664fc33bb9'):
+  Reference modality: 'poses' -> 234 items.
+  - poses: 234
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000231.pose.txt', 'frame-000232.pose.txt', 'frame-000233.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac753a-8d6f-2d13-8f04-2073b87af440'):
+  Reference modality: 'poses' -> 167 items.
+  - poses: 167
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000164.pose.txt', 'frame-000165.pose.txt', 'frame-000166.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7549-8d6f-2d13-8d56-b895956f571a'):
+  Reference modality: 'poses' -> 202 items.
+  - poses: 202
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000199.pose.txt', 'frame-000200.pose.txt', 'frame-000201.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='dc42b378-8d5c-2d2a-8477-c1f077da4e56'):
+  Reference modality: 'poses' -> 386 items.
+  - poses: 386
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000383.pose.txt', 'frame-000384.pose.txt', 'frame-000385.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7558-8d6f-2d13-8fe1-c8af0362735d'):
+  Reference modality: 'poses' -> 558 items.
+  - poses: 558
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000555.pose.txt', 'frame-000556.pose.txt', 'frame-000557.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='baf67393-8e94-22f8-8198-961bc5ea7f20'):
+  Reference modality: 'poses' -> 290 items.
+  - poses: 290
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000287.pose.txt', 'frame-000288.pose.txt', 'frame-000289.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac755a-8d6f-2d13-8fed-b1be02f4ef77'):
+  Reference modality: 'poses' -> 571 items.
+  - poses: 571
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000568.pose.txt', 'frame-000569.pose.txt', 'frame-000570.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='baf673a1-8e94-22f8-824b-1139a8fc8bda'):
+  Reference modality: 'poses' -> 257 items.
+  - poses: 257
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000254.pose.txt', 'frame-000255.pose.txt', 'frame-000256.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='baf67399-8e94-22f8-81b1-900b40b196d7'):
+  Reference modality: 'poses' -> 47 items.
+  - poses: 47
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000044.pose.txt', 'frame-000045.pose.txt', 'frame-000046.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac755e-8d6f-2d13-8c6a-c0979ca34a4f'):
+  Reference modality: 'poses' -> 256 items.
+  - poses: 256
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000253.pose.txt', 'frame-000254.pose.txt', 'frame-000255.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='baf6739f-8e94-22f8-82fd-b0cc4f4da8ae'):
+  Reference modality: 'poses' -> 102 items.
+  - poses: 102
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000099.pose.txt', 'frame-000100.pose.txt', 'frame-000101.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7564-8d6f-2d13-8cb2-8b01c0a1b3d5'):
+  Reference modality: 'poses' -> 310 items.
+  - poses: 310
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000307.pose.txt', 'frame-000308.pose.txt', 'frame-000309.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='baf673b0-8e94-22f8-8136-0b6b5028de14'):
+  Reference modality: 'poses' -> 249 items.
+  - poses: 249
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000246.pose.txt', 'frame-000247.pose.txt', 'frame-000248.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7574-8d6f-2d13-8db6-4304f437e6d5'):
+  Reference modality: 'poses' -> 234 items.
+  - poses: 234
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000231.pose.txt', 'frame-000232.pose.txt', 'frame-000233.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='2451c03f-fae8-24f6-90ac-6ba38cab8c92'):
+  Reference modality: 'poses' -> 193 items.
+  - poses: 193
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000190.pose.txt', 'frame-000191.pose.txt', 'frame-000192.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7576-8d6f-2d13-8f3c-f01f8f14022c'):
+  Reference modality: 'poses' -> 225 items.
+  - poses: 225
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000222.pose.txt', 'frame-000223.pose.txt', 'frame-000224.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7578-8d6f-2d13-8c2d-bfa7a04f8af3'):
+  Reference modality: 'poses' -> 299 items.
+  - poses: 299
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000296.pose.txt', 'frame-000297.pose.txt', 'frame-000298.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='2451c041-fae8-24f6-9213-b8b6af8d86c1'):
+  Reference modality: 'poses' -> 201 items.
+  - poses: 201
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000198.pose.txt', 'frame-000199.pose.txt', 'frame-000200.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='ddc73793-765b-241a-9ecd-b0cebb7cf916'):
+  Reference modality: 'poses' -> 265 items.
+  - poses: 265
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000262.pose.txt', 'frame-000263.pose.txt', 'frame-000264.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='ddc73795-765b-241a-9c5d-b97744afe077'):
+  Reference modality: 'poses' -> 93 items.
+  - poses: 93
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000090.pose.txt', 'frame-000091.pose.txt', 'frame-000092.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7580-8d6f-2d13-8c9d-d45247b5244b'):
+  Reference modality: 'poses' -> 307 items.
+  - poses: 307
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000304.pose.txt', 'frame-000305.pose.txt', 'frame-000306.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac757e-8d6f-2d13-8f1d-ef6123d53655'):
+  Reference modality: 'poses' -> 77 items.
+  - poses: 77
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000074.pose.txt', 'frame-000075.pose.txt', 'frame-000076.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='c7895f0f-339c-2d13-807d-cb2e7fe646fd'):
+  Reference modality: 'poses' -> 216 items.
+  - poses: 216
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000213.pose.txt', 'frame-000214.pose.txt', 'frame-000215.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7597-8d6f-2d13-8c9c-6f8542021d5c'):
+  Reference modality: 'poses' -> 171 items.
+  - poses: 171
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000168.pose.txt', 'frame-000169.pose.txt', 'frame-000170.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7595-8d6f-2d13-8cad-f51af4c9aba2'):
+  Reference modality: 'poses' -> 112 items.
+  - poses: 112
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000109.pose.txt', 'frame-000110.pose.txt', 'frame-000111.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac759b-8d6f-2d13-8e3b-2e3bc1ee1158'):
+  Reference modality: 'poses' -> 216 items.
+  - poses: 216
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000213.pose.txt', 'frame-000214.pose.txt', 'frame-000215.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='b05fdd68-fca0-2d4f-895a-2f40f6b4aca9'):
+  Reference modality: 'poses' -> 168 items.
+  - poses: 168
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000165.pose.txt', 'frame-000166.pose.txt', 'frame-000167.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac759d-8d6f-2d13-8e8b-c3730d9fe563'):
+  Reference modality: 'poses' -> 180 items.
+  - poses: 180
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000177.pose.txt', 'frame-000178.pose.txt', 'frame-000179.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7599-8d6f-2d13-8e7f-4217750a64cc'):
+  Reference modality: 'poses' -> 179 items.
+  - poses: 179
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000176.pose.txt', 'frame-000177.pose.txt', 'frame-000178.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75a7-8d6f-2d13-8fdc-083ff44d10fb'):
+  Reference modality: 'poses' -> 180 items.
+  - poses: 180
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000177.pose.txt', 'frame-000178.pose.txt', 'frame-000179.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='2451c053-fae8-24f6-91f0-6bebca1fe741'):
+  Reference modality: 'poses' -> 204 items.
+  - poses: 204
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000201.pose.txt', 'frame-000202.pose.txt', 'frame-000203.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75ad-8d6f-2d13-8c74-5de4dfc4affc'):
+  Reference modality: 'poses' -> 106 items.
+  - poses: 106
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000103.pose.txt', 'frame-000104.pose.txt', 'frame-000105.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='2451c057-fae8-24f6-92b8-df89e0429f6e'):
+  Reference modality: 'poses' -> 119 items.
+  - poses: 119
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000116.pose.txt', 'frame-000117.pose.txt', 'frame-000118.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75ab-8d6f-2d13-8fea-b1eb7e9bf6e7'):
+  Reference modality: 'poses' -> 193 items.
+  - poses: 193
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000190.pose.txt', 'frame-000191.pose.txt', 'frame-000192.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75af-8d6f-2d13-8f9e-ed3f62665aed'):
+  Reference modality: 'poses' -> 3 items.
+  - poses: 3
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75b1-8d6f-2d13-8c17-9099db8915bc'):
+  Reference modality: 'poses' -> 563 items.
+  - poses: 563
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000560.pose.txt', 'frame-000561.pose.txt', 'frame-000562.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75b3-8d6f-2d13-8f4b-3d74070429df'):
+  Reference modality: 'poses' -> 155 items.
+  - poses: 155
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000152.pose.txt', 'frame-000153.pose.txt', 'frame-000154.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75c4-8d6f-2d13-8c37-fcfaf141ae5a'):
+  Reference modality: 'poses' -> 165 items.
+  - poses: 165
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000162.pose.txt', 'frame-000163.pose.txt', 'frame-000164.pose.txt']
+2026-04-27 17:55:20   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75c6-8d6f-2d13-8d35-f0128b4fb7a9'):
+  Reference modality: 'poses' -> 109 items.
+  - poses: 109
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000106.pose.txt', 'frame-000107.pose.txt', 'frame-000108.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75c8-8d6f-2d13-8c08-b3c40c58e0f7'):
+  Reference modality: 'poses' -> 173 items.
+  - poses: 173
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000170.pose.txt', 'frame-000171.pose.txt', 'frame-000172.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75ca-8d6f-2d13-8dfc-9932bfbb834d'):
+  Reference modality: 'poses' -> 139 items.
+  - poses: 139
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000136.pose.txt', 'frame-000137.pose.txt', 'frame-000138.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75cc-8d6f-2d13-8ddf-7b3c05e8709c'):
+  Reference modality: 'poses' -> 85 items.
+  - poses: 85
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000082.pose.txt', 'frame-000083.pose.txt', 'frame-000084.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75d0-8d6f-2d13-8c26-d771a31c3f50'):
+  Reference modality: 'poses' -> 214 items.
+  - poses: 214
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000211.pose.txt', 'frame-000212.pose.txt', 'frame-000213.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75ce-8d6f-2d13-8cf1-add4e795b9b0'):
+  Reference modality: 'poses' -> 175 items.
+  - poses: 175
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000172.pose.txt', 'frame-000173.pose.txt', 'frame-000174.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75f0-8d6f-2d13-8d86-371deca33bb4'):
+  Reference modality: 'poses' -> 156 items.
+  - poses: 156
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000153.pose.txt', 'frame-000154.pose.txt', 'frame-000155.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='dbeb4d06-faf9-2324-9bca-4df3f194818e'):
+  Reference modality: 'poses' -> 128 items.
+  - poses: 128
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000125.pose.txt', 'frame-000126.pose.txt', 'frame-000127.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75ee-8d6f-2d13-8f1f-5f13d3b59ce3'):
+  Reference modality: 'poses' -> 109 items.
+  - poses: 109
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000106.pose.txt', 'frame-000107.pose.txt', 'frame-000108.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75f4-8d6f-2d13-8c10-ce688f7ac0af'):
+  Reference modality: 'poses' -> 205 items.
+  - poses: 205
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000202.pose.txt', 'frame-000203.pose.txt', 'frame-000204.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75f2-8d6f-2d13-8f0f-f00e880b4e7b'):
+  Reference modality: 'poses' -> 161 items.
+  - poses: 161
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000158.pose.txt', 'frame-000159.pose.txt', 'frame-000160.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75f6-8d6f-2d13-8d7b-dc01a394149c'):
+  Reference modality: 'poses' -> 128 items.
+  - poses: 128
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000125.pose.txt', 'frame-000126.pose.txt', 'frame-000127.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75f8-8d6f-2d13-8f8a-30d9464cad6e'):
+  Reference modality: 'poses' -> 163 items.
+  - poses: 163
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000160.pose.txt', 'frame-000161.pose.txt', 'frame-000162.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75fc-8d6f-2d13-8c59-13d52e366f38'):
+  Reference modality: 'poses' -> 117 items.
+  - poses: 117
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000114.pose.txt', 'frame-000115.pose.txt', 'frame-000116.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac75fe-8d6f-2d13-8dd8-87c100e95f4d'):
+  Reference modality: 'poses' -> 142 items.
+  - poses: 142
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000139.pose.txt', 'frame-000140.pose.txt', 'frame-000141.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7602-8d6f-2d13-8ca7-c26866c2e42f'):
+  Reference modality: 'poses' -> 138 items.
+  - poses: 138
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000135.pose.txt', 'frame-000136.pose.txt', 'frame-000137.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7604-8d6f-2d13-8e39-784396ee3b8c'):
+  Reference modality: 'poses' -> 119 items.
+  - poses: 119
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000116.pose.txt', 'frame-000117.pose.txt', 'frame-000118.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac760f-8d6f-2d13-8d9d-2d8df8f8cb6e'):
+  Reference modality: 'poses' -> 166 items.
+  - poses: 166
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000163.pose.txt', 'frame-000164.pose.txt', 'frame-000165.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac760d-8d6f-2d13-8ea2-109ce4da9ac9'):
+  Reference modality: 'poses' -> 232 items.
+  - poses: 232
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000229.pose.txt', 'frame-000230.pose.txt', 'frame-000231.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7623-8d6f-2d13-8da0-462e7fc0bea2'):
+  Reference modality: 'poses' -> 209 items.
+  - poses: 209
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000206.pose.txt', 'frame-000207.pose.txt', 'frame-000208.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='dbeb4d0b-faf9-2324-99bf-259c104b313b'):
+  Reference modality: 'poses' -> 135 items.
+  - poses: 135
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000132.pose.txt', 'frame-000133.pose.txt', 'frame-000134.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7621-8d6f-2d13-8cb1-ac43b90f4141'):
+  Reference modality: 'poses' -> 121 items.
+  - poses: 121
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000118.pose.txt', 'frame-000119.pose.txt', 'frame-000120.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7627-8d6f-2d13-8eac-41764b5f2c5b'):
+  Reference modality: 'poses' -> 13 items.
+  - poses: 13
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000010.pose.txt', 'frame-000011.pose.txt', 'frame-000012.pose.txt']
+2026-04-27 17:55:21   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7625-8d6f-2d13-8f72-9672f2345ef9'):
+  Reference modality: 'poses' -> 78 items.
+  - poses: 78
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000075.pose.txt', 'frame-000076.pose.txt', 'frame-000077.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7629-8d6f-2d13-8e5a-9f17681451c8'):
+  Reference modality: 'poses' -> 106 items.
+  - poses: 106
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000103.pose.txt', 'frame-000104.pose.txt', 'frame-000105.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7635-8d6f-2d13-8ea5-25f4dc197d1d'):
+  Reference modality: 'poses' -> 194 items.
+  - poses: 194
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000191.pose.txt', 'frame-000192.pose.txt', 'frame-000193.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7637-8d6f-2d13-8e6f-f79dce250314'):
+  Reference modality: 'poses' -> 241 items.
+  - poses: 241
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000238.pose.txt', 'frame-000239.pose.txt', 'frame-000240.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac763b-8d6f-2d13-8c67-de3d97b48d39'):
+  Reference modality: 'poses' -> 126 items.
+  - poses: 126
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000123.pose.txt', 'frame-000124.pose.txt', 'frame-000125.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7640-8d6f-2d13-8d50-e374f145f2b6'):
+  Reference modality: 'poses' -> 116 items.
+  - poses: 116
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000113.pose.txt', 'frame-000114.pose.txt', 'frame-000115.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7642-8d6f-2d13-8f9f-eb19016049fa'):
+  Reference modality: 'poses' -> 136 items.
+  - poses: 136
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000133.pose.txt', 'frame-000134.pose.txt', 'frame-000135.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7644-8d6f-2d13-8e31-4a5219d710b9'):
+  Reference modality: 'poses' -> 92 items.
+  - poses: 92
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000089.pose.txt', 'frame-000090.pose.txt', 'frame-000091.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7648-8d6f-2d13-8e30-76663c19baa4'):
+  Reference modality: 'poses' -> 127 items.
+  - poses: 127
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000124.pose.txt', 'frame-000125.pose.txt', 'frame-000126.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7646-8d6f-2d13-8d24-1bc724028d31'):
+  Reference modality: 'poses' -> 170 items.
+  - poses: 170
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000167.pose.txt', 'frame-000168.pose.txt', 'frame-000169.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac764c-8d6f-2d13-8fec-15edfc3e53ad'):
+  Reference modality: 'poses' -> 207 items.
+  - poses: 207
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000204.pose.txt', 'frame-000205.pose.txt', 'frame-000206.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac764a-8d6f-2d13-8fbd-2966f09c65d0'):
+  Reference modality: 'poses' -> 187 items.
+  - poses: 187
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000184.pose.txt', 'frame-000185.pose.txt', 'frame-000186.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7654-8d6f-2d13-8e68-ddd1767454ad'):
+  Reference modality: 'poses' -> 146 items.
+  - poses: 146
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000143.pose.txt', 'frame-000144.pose.txt', 'frame-000145.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7652-8d6f-2d13-8f0e-a1dd07a8a847'):
+  Reference modality: 'poses' -> 75 items.
+  - poses: 75
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000072.pose.txt', 'frame-000073.pose.txt', 'frame-000074.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7664-8d6f-2d13-8e1d-b97c9ab20b12'):
+  Reference modality: 'poses' -> 152 items.
+  - poses: 152
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000149.pose.txt', 'frame-000150.pose.txt', 'frame-000151.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='dbeb4d1f-faf9-2324-98d1-605c3c0c0658'):
+  Reference modality: 'poses' -> 109 items.
+  - poses: 109
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000106.pose.txt', 'frame-000107.pose.txt', 'frame-000108.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7662-8d6f-2d13-8e2c-189aab269bae'):
+  Reference modality: 'poses' -> 163 items.
+  - poses: 163
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000160.pose.txt', 'frame-000161.pose.txt', 'frame-000162.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac766c-8d6f-2d13-8cde-44c997b5e8a7'):
+  Reference modality: 'poses' -> 236 items.
+  - poses: 236
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000233.pose.txt', 'frame-000234.pose.txt', 'frame-000235.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='75c259b9-9ca2-2844-9473-43d990560f90'):
+  Reference modality: 'poses' -> 202 items.
+  - poses: 202
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000199.pose.txt', 'frame-000200.pose.txt', 'frame-000201.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='dbeb4d67-faf9-2324-9960-d9db614caeff'):
+  Reference modality: 'poses' -> 247 items.
+  - poses: 247
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000244.pose.txt', 'frame-000245.pose.txt', 'frame-000246.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac767c-8d6f-2d13-8e22-50ba98af68e6'):
+  Reference modality: 'poses' -> 170 items.
+  - poses: 170
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000167.pose.txt', 'frame-000168.pose.txt', 'frame-000169.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='19f1a892-a988-2bf8-8c91-0705cf396888'):
+  Reference modality: 'poses' -> 363 items.
+  - poses: 363
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000360.pose.txt', 'frame-000361.pose.txt', 'frame-000362.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='6a36053f-fa53-2915-9579-3938283bc154'):
+  Reference modality: 'poses' -> 48 items.
+  - poses: 48
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000045.pose.txt', 'frame-000046.pose.txt', 'frame-000047.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac767e-8d6f-2d13-8d1a-d5e9b184df15'):
+  Reference modality: 'poses' -> 288 items.
+  - poses: 288
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000285.pose.txt', 'frame-000286.pose.txt', 'frame-000287.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='7272e189-a01b-20f6-8a2e-05b6c8395143'):
+  Reference modality: 'poses' -> 152 items.
+  - poses: 152
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000149.pose.txt', 'frame-000150.pose.txt', 'frame-000151.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='6a360541-fa53-2915-9432-e4b7e065aa73'):
+  Reference modality: 'poses' -> 54 items.
+  - poses: 54
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000051.pose.txt', 'frame-000052.pose.txt', 'frame-000053.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac7680-8d6f-2d13-8e05-f6da6172d239'):
+  Reference modality: 'poses' -> 131 items.
+  - poses: 131
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000128.pose.txt', 'frame-000129.pose.txt', 'frame-000130.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='19f1a897-a988-2bf8-8f8d-f3b64da81c2a'):
+  Reference modality: 'poses' -> 149 items.
+  - poses: 149
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000146.pose.txt', 'frame-000147.pose.txt', 'frame-000148.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='6a360549-fa53-2915-97ad-3853a1cb460c'):
+  Reference modality: 'poses' -> 52 items.
+  - poses: 52
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000049.pose.txt', 'frame-000050.pose.txt', 'frame-000051.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac768c-8d6f-2d13-8cc8-7ace156fc3e7'):
+  Reference modality: 'poses' -> 5 items.
+  - poses: 5
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', 'frame-000003.pose.txt', 'frame-000004.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cac768a-8d6f-2d13-8dd3-3cbb7d916641'):
+  Reference modality: 'poses' -> 1 items.
+  - poses: 1
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cf75f4b-564d-23f5-899f-ff97701d3f3b'):
+  Reference modality: 'poses' -> 196 items.
+  - poses: 196
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000193.pose.txt', 'frame-000194.pose.txt', 'frame-000195.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cf75f4e-564d-23f5-8a9a-3ceecab0afe1'):
+  Reference modality: 'poses' -> 250 items.
+  - poses: 250
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000247.pose.txt', 'frame-000248.pose.txt', 'frame-000249.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0cf75f50-564d-23f5-8a6b-cf1f98afcbce'):
+  Reference modality: 'poses' -> 171 items.
+  - poses: 171
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000168.pose.txt', 'frame-000169.pose.txt', 'frame-000170.pose.txt']
+2026-04-27 17:55:22   [MODALITY MISMATCH] Different file counts for scene (scene_id='0f2f2711-b736-2f71-8c6a-245a9d820a8c'):
+  Reference modality: 'poses' -> 249 items.
+  - poses: 249
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000246.pose.txt', 'frame-000247.pose.txt', 'frame-000248.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='0f2f2713-b736-2f71-8c10-dcecbef587f9'):
+  Reference modality: 'poses' -> 208 items.
+  - poses: 208
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000205.pose.txt', 'frame-000206.pose.txt', 'frame-000207.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='0f2f2717-b736-2f71-8d6a-28817c01a17f'):
+  Reference modality: 'poses' -> 279 items.
+  - poses: 279
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000276.pose.txt', 'frame-000277.pose.txt', 'frame-000278.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='7ab2a9c3-ebc6-2056-8965-ecbce808b905'):
+  Reference modality: 'poses' -> 93 items.
+  - poses: 93
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000090.pose.txt', 'frame-000091.pose.txt', 'frame-000092.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='8eabc405-5af7-2f32-86d2-d757fa7b019d'):
+  Reference modality: 'poses' -> 125 items.
+  - poses: 125
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000122.pose.txt', 'frame-000123.pose.txt', 'frame-000124.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='0f2f271b-b736-2f71-8f3a-e9265463abcb'):
+  Reference modality: 'poses' -> 233 items.
+  - poses: 233
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000230.pose.txt', 'frame-000231.pose.txt', 'frame-000232.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='0f2f271d-b736-2f71-8d77-dfc428e30c1e'):
+  Reference modality: 'poses' -> 181 items.
+  - poses: 181
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000178.pose.txt', 'frame-000179.pose.txt', 'frame-000180.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='0f2f271f-b736-2f71-8f74-15fd679c80d5'):
+  Reference modality: 'poses' -> 229 items.
+  - poses: 229
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000226.pose.txt', 'frame-000227.pose.txt', 'frame-000228.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='0f2f2721-b736-2f71-8cd7-8f86d4bd0437'):
+  Reference modality: 'poses' -> 289 items.
+  - poses: 289
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000286.pose.txt', 'frame-000287.pose.txt', 'frame-000288.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='10b17936-3938-2467-88ba-ba5fe2debf14'):
+  Reference modality: 'poses' -> 111 items.
+  - poses: 111
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000108.pose.txt', 'frame-000109.pose.txt', 'frame-000110.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='c92fb580-f771-2064-866d-8aeb53e8360d'):
+  Reference modality: 'poses' -> 243 items.
+  - poses: 243
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000240.pose.txt', 'frame-000241.pose.txt', 'frame-000242.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='c92fb582-f771-2064-86b3-52c04298e4e6'):
+  Reference modality: 'poses' -> 136 items.
+  - poses: 136
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000133.pose.txt', 'frame-000134.pose.txt', 'frame-000135.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='c92fb5b1-f771-2064-8492-1233552bf94d'):
+  Reference modality: 'poses' -> 198 items.
+  - poses: 198
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000195.pose.txt', 'frame-000196.pose.txt', 'frame-000197.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='c92fb5af-f771-2064-8476-871572e38970'):
+  Reference modality: 'poses' -> 259 items.
+  - poses: 259
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000256.pose.txt', 'frame-000257.pose.txt', 'frame-000258.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='10b17938-3938-2467-8a37-21820ba7efc8'):
+  Reference modality: 'poses' -> 87 items.
+  - poses: 87
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000084.pose.txt', 'frame-000085.pose.txt', 'frame-000086.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='10b1795b-3938-2467-88fe-b10cad8913f8'):
+  Reference modality: 'poses' -> 113 items.
+  - poses: 113
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000110.pose.txt', 'frame-000111.pose.txt', 'frame-000112.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='9c27de56-6184-2cda-8196-591957b6387d'):
+  Reference modality: 'poses' -> 73 items.
+  - poses: 73
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000070.pose.txt', 'frame-000071.pose.txt', 'frame-000072.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d2f8510-d757-207c-8c48-3684433860e1'):
+  Reference modality: 'poses' -> 206 items.
+  - poses: 206
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000203.pose.txt', 'frame-000204.pose.txt', 'frame-000205.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='10b1795f-3938-2467-8aa6-c985377d32fb'):
+  Reference modality: 'poses' -> 140 items.
+  - poses: 140
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000137.pose.txt', 'frame-000138.pose.txt', 'frame-000139.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='fcf66d79-622d-291c-84dd-a88fa9c4e664'):
+  Reference modality: 'poses' -> 49 items.
+  - poses: 49
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000046.pose.txt', 'frame-000047.pose.txt', 'frame-000048.pose.txt']
+2026-04-27 17:55:23   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d2f850e-d757-207c-8eea-5d41656673f4'):
+  Reference modality: 'poses' -> 153 items.
+  - poses: 153
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000150.pose.txt', 'frame-000151.pose.txt', 'frame-000152.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='10b17971-3938-2467-8a86-2b42613aa7ec'):
+  Reference modality: 'poses' -> 495 items.
+  - poses: 495
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000492.pose.txt', 'frame-000493.pose.txt', 'frame-000494.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='10b17973-3938-2467-8906-5ba39b48458d'):
+  Reference modality: 'poses' -> 482 items.
+  - poses: 482
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000479.pose.txt', 'frame-000480.pose.txt', 'frame-000481.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='13124cad-cec3-27a6-857f-914a832a87c3'):
+  Reference modality: 'poses' -> 243 items.
+  - poses: 243
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000240.pose.txt', 'frame-000241.pose.txt', 'frame-000242.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='6a360551-fa53-2915-9739-7b7c1857bed3'):
+  Reference modality: 'poses' -> 80 items.
+  - poses: 80
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000077.pose.txt', 'frame-000078.pose.txt', 'frame-000079.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='13124cb2-cec3-27a6-8583-cc0a9d6d1a9a'):
+  Reference modality: 'poses' -> 197 items.
+  - poses: 197
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000194.pose.txt', 'frame-000195.pose.txt', 'frame-000196.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='6a36055f-fa53-2915-9432-786820630ea7'):
+  Reference modality: 'poses' -> 71 items.
+  - poses: 71
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000068.pose.txt', 'frame-000069.pose.txt', 'frame-000070.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='13124cbe-cec3-27a6-8745-6e02a03494d2'):
+  Reference modality: 'poses' -> 119 items.
+  - poses: 119
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000116.pose.txt', 'frame-000117.pose.txt', 'frame-000118.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='6a360545-fa53-2915-9484-a3de8990a423'):
+  Reference modality: 'poses' -> 52 items.
+  - poses: 52
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000049.pose.txt', 'frame-000050.pose.txt', 'frame-000051.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='6a360547-fa53-2915-9606-a90f1c737290'):
+  Reference modality: 'poses' -> 48 items.
+  - poses: 48
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000045.pose.txt', 'frame-000046.pose.txt', 'frame-000047.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='13124cc0-cec3-27a6-84bd-1f56cb6d11a8'):
+  Reference modality: 'poses' -> 127 items.
+  - poses: 127
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000124.pose.txt', 'frame-000125.pose.txt', 'frame-000126.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='7272e190-a01b-20f6-8bde-769bcd548633'):
+  Reference modality: 'poses' -> 122 items.
+  - poses: 122
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000119.pose.txt', 'frame-000120.pose.txt', 'frame-000121.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='6a360543-fa53-2915-95a7-697af24d1d25'):
+  Reference modality: 'poses' -> 86 items.
+  - poses: 86
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000083.pose.txt', 'frame-000084.pose.txt', 'frame-000085.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='13124cc2-cec3-27a6-86ad-946fe3a73493'):
+  Reference modality: 'poses' -> 363 items.
+  - poses: 363
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000360.pose.txt', 'frame-000361.pose.txt', 'frame-000362.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='7272e182-a01b-20f6-89b8-3bdec0091c89'):
+  Reference modality: 'poses' -> 168 items.
+  - poses: 168
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000165.pose.txt', 'frame-000166.pose.txt', 'frame-000167.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='6a36053b-fa53-2915-9716-6b5361c7791a'):
+  Reference modality: 'poses' -> 85 items.
+  - poses: 85
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000082.pose.txt', 'frame-000083.pose.txt', 'frame-000084.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='1713f852-5300-2104-8658-73b77b66af61'):
+  Reference modality: 'poses' -> 279 items.
+  - poses: 279
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000276.pose.txt', 'frame-000277.pose.txt', 'frame-000278.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='1713f857-5300-2104-85c7-5e6e0b50713c'):
+  Reference modality: 'poses' -> 251 items.
+  - poses: 251
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000248.pose.txt', 'frame-000249.pose.txt', 'frame-000250.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='1713f859-5300-2104-841c-c60e88ded469'):
+  Reference modality: 'poses' -> 454 items.
+  - poses: 454
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000451.pose.txt', 'frame-000452.pose.txt', 'frame-000453.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='1776ad7c-4db7-2333-88b3-edb7a9803f6f'):
+  Reference modality: 'poses' -> 113 items.
+  - poses: 113
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000110.pose.txt', 'frame-000111.pose.txt', 'frame-000112.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='1776ad78-4db7-2333-887f-d6b6a617255a'):
+  Reference modality: 'poses' -> 125 items.
+  - poses: 125
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000122.pose.txt', 'frame-000123.pose.txt', 'frame-000124.pose.txt']
+2026-04-27 17:55:24   [MODALITY MISMATCH] Different file counts for scene (scene_id='1776ad76-4db7-2333-8ab2-6de6191f3d11'):
+  Reference modality: 'poses' -> 185 items.
+  - poses: 185
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000182.pose.txt', 'frame-000183.pose.txt', 'frame-000184.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1776ad7a-4db7-2333-8afa-5fb5440b2edc'):
+  Reference modality: 'poses' -> 84 items.
+  - poses: 84
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000081.pose.txt', 'frame-000082.pose.txt', 'frame-000083.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1776ad7e-4db7-2333-89e1-66854e82170c'):
+  Reference modality: 'poses' -> 40 items.
+  - poses: 40
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000037.pose.txt', 'frame-000038.pose.txt', 'frame-000039.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1776ad82-4db7-2333-89e4-d73159ac81d0'):
+  Reference modality: 'poses' -> 41 items.
+  - poses: 41
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000038.pose.txt', 'frame-000039.pose.txt', 'frame-000040.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1776ad86-4db7-2333-8935-240e44ccb16d'):
+  Reference modality: 'poses' -> 74 items.
+  - poses: 74
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000071.pose.txt', 'frame-000072.pose.txt', 'frame-000073.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1776ad80-4db7-2333-8b18-f02ef42f3569'):
+  Reference modality: 'poses' -> 40 items.
+  - poses: 40
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000037.pose.txt', 'frame-000038.pose.txt', 'frame-000039.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1776ad84-4db7-2333-8aa7-2cc9126d5f71'):
+  Reference modality: 'poses' -> 41 items.
+  - poses: 41
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000038.pose.txt', 'frame-000039.pose.txt', 'frame-000040.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='185d7423-3698-223c-8879-80ad9339afce'):
+  Reference modality: 'poses' -> 174 items.
+  - poses: 174
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000171.pose.txt', 'frame-000172.pose.txt', 'frame-000173.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='185d7425-3698-223c-8ac8-78643cbdc3d1'):
+  Reference modality: 'poses' -> 164 items.
+  - poses: 164
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000161.pose.txt', 'frame-000162.pose.txt', 'frame-000163.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='185d7427-3698-223c-8996-74a451349121'):
+  Reference modality: 'poses' -> 127 items.
+  - poses: 127
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000124.pose.txt', 'frame-000125.pose.txt', 'frame-000126.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='185d7429-3698-223c-8a42-8c2d18d51531'):
+  Reference modality: 'poses' -> 165 items.
+  - poses: 165
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000162.pose.txt', 'frame-000163.pose.txt', 'frame-000164.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='18d4d91f-7eb5-280e-8757-1eb6f43ecfd2'):
+  Reference modality: 'poses' -> 221 items.
+  - poses: 221
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000218.pose.txt', 'frame-000219.pose.txt', 'frame-000220.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='6ed38504-7db9-2d45-81b6-b57de59a603b'):
+  Reference modality: 'poses' -> 261 items.
+  - poses: 261
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000258.pose.txt', 'frame-000259.pose.txt', 'frame-000260.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='6ed38506-7db9-2d45-826e-645bbd9614e6'):
+  Reference modality: 'poses' -> 283 items.
+  - poses: 283
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000280.pose.txt', 'frame-000281.pose.txt', 'frame-000282.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='18d4d922-7eb5-280e-87bb-af3229fb1f13'):
+  Reference modality: 'poses' -> 172 items.
+  - poses: 172
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000169.pose.txt', 'frame-000170.pose.txt', 'frame-000171.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='18d4d924-7eb5-280e-8764-f9654f215144'):
+  Reference modality: 'poses' -> 208 items.
+  - poses: 208
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000205.pose.txt', 'frame-000206.pose.txt', 'frame-000207.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='18d4d926-7eb5-280e-87df-199e66f2babd'):
+  Reference modality: 'poses' -> 231 items.
+  - poses: 231
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000228.pose.txt', 'frame-000229.pose.txt', 'frame-000230.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='b3d355dd-7f5b-2091-86d0-b81f777eb9c1'):
+  Reference modality: 'poses' -> 328 items.
+  - poses: 328
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000325.pose.txt', 'frame-000326.pose.txt', 'frame-000327.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1c211546-f201-2d25-862b-6323518ec6e1'):
+  Reference modality: 'poses' -> 230 items.
+  - poses: 230
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000227.pose.txt', 'frame-000228.pose.txt', 'frame-000229.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='d63767c1-3205-226c-9a47-70f388b93739'):
+  Reference modality: 'poses' -> 134 items.
+  - poses: 134
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000131.pose.txt', 'frame-000132.pose.txt', 'frame-000133.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1c21154a-f201-2d25-8573-d3e22ddfe900'):
+  Reference modality: 'poses' -> 295 items.
+  - poses: 295
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000292.pose.txt', 'frame-000293.pose.txt', 'frame-000294.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1c211548-f201-2d25-8686-8e8069116451'):
+  Reference modality: 'poses' -> 143 items.
+  - poses: 143
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000140.pose.txt', 'frame-000141.pose.txt', 'frame-000142.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d233ff6-e280-2b1a-8ed5-3eec62f9bb3f'):
+  Reference modality: 'poses' -> 179 items.
+  - poses: 179
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000176.pose.txt', 'frame-000177.pose.txt', 'frame-000178.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d233fec-e280-2b1a-8e12-986a9af880f0'):
+  Reference modality: 'poses' -> 265 items.
+  - poses: 265
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000262.pose.txt', 'frame-000263.pose.txt', 'frame-000264.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d233fea-e280-2b1a-8f15-cd60d12ae197'):
+  Reference modality: 'poses' -> 180 items.
+  - poses: 180
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000177.pose.txt', 'frame-000178.pose.txt', 'frame-000179.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d233ffe-e280-2b1a-8f1e-7ddb66c98d36'):
+  Reference modality: 'poses' -> 184 items.
+  - poses: 184
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000181.pose.txt', 'frame-000182.pose.txt', 'frame-000183.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d233ffc-e280-2b1a-8c3a-af74ca2b0cea'):
+  Reference modality: 'poses' -> 156 items.
+  - poses: 156
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000153.pose.txt', 'frame-000154.pose.txt', 'frame-000155.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d233ffa-e280-2b1a-8e92-2540f61e5501'):
+  Reference modality: 'poses' -> 116 items.
+  - poses: 116
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000113.pose.txt', 'frame-000114.pose.txt', 'frame-000115.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234002-e280-2b1a-8c8d-6aafb5b35a24'):
+  Reference modality: 'poses' -> 46 items.
+  - poses: 46
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000043.pose.txt', 'frame-000044.pose.txt', 'frame-000045.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234000-e280-2b1a-8d5e-bd2403a8dbfa'):
+  Reference modality: 'poses' -> 42 items.
+  - poses: 42
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000039.pose.txt', 'frame-000040.pose.txt', 'frame-000041.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234004-e280-2b1a-8ec8-560046b9fc96'):
+  Reference modality: 'poses' -> 172 items.
+  - poses: 172
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000169.pose.txt', 'frame-000170.pose.txt', 'frame-000171.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d233fee-e280-2b1a-8e0d-1dc297439839'):
+  Reference modality: 'poses' -> 199 items.
+  - poses: 199
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000196.pose.txt', 'frame-000197.pose.txt', 'frame-000198.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234006-e280-2b1a-8e34-b2f670259e8d'):
+  Reference modality: 'poses' -> 63 items.
+  - poses: 63
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000060.pose.txt', 'frame-000061.pose.txt', 'frame-000062.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d23400a-e280-2b1a-8e83-f7344ba74475'):
+  Reference modality: 'poses' -> 59 items.
+  - poses: 59
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000056.pose.txt', 'frame-000057.pose.txt', 'frame-000058.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234008-e280-2b1a-8cc9-c573097cd272'):
+  Reference modality: 'poses' -> 91 items.
+  - poses: 91
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000088.pose.txt', 'frame-000089.pose.txt', 'frame-000090.pose.txt']
+2026-04-27 17:55:25   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234010-e280-2b1a-8da8-205855a16b6b'):
+  Reference modality: 'poses' -> 138 items.
+  - poses: 138
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000135.pose.txt', 'frame-000136.pose.txt', 'frame-000137.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d23400e-e280-2b1a-8dec-67a551146c3a'):
+  Reference modality: 'poses' -> 19 items.
+  - poses: 19
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000016.pose.txt', 'frame-000017.pose.txt', 'frame-000018.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d23400c-e280-2b1a-8d36-1f20202baaf9'):
+  Reference modality: 'poses' -> 122 items.
+  - poses: 122
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000119.pose.txt', 'frame-000120.pose.txt', 'frame-000121.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234018-e280-2b1a-8f22-da2b997865e8'):
+  Reference modality: 'poses' -> 290 items.
+  - poses: 290
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000287.pose.txt', 'frame-000288.pose.txt', 'frame-000289.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d23401c-e280-2b1a-8ecd-1d677f57530e'):
+  Reference modality: 'poses' -> 262 items.
+  - poses: 262
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000259.pose.txt', 'frame-000260.pose.txt', 'frame-000261.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234012-e280-2b1a-8dea-0d1d53e0572d'):
+  Reference modality: 'poses' -> 346 items.
+  - poses: 346
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000343.pose.txt', 'frame-000344.pose.txt', 'frame-000345.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d23401e-e280-2b1a-8cef-f28df9df2618'):
+  Reference modality: 'poses' -> 167 items.
+  - poses: 167
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000164.pose.txt', 'frame-000165.pose.txt', 'frame-000166.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234016-e280-2b1a-8c7c-ce441e1ebb0f'):
+  Reference modality: 'poses' -> 9 items.
+  - poses: 9
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000006.pose.txt', 'frame-000007.pose.txt', 'frame-000008.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d234014-e280-2b1a-8eab-fe44989693aa'):
+  Reference modality: 'poses' -> 143 items.
+  - poses: 143
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000140.pose.txt', 'frame-000141.pose.txt', 'frame-000142.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='1d2f8514-d757-207c-8e40-377957df6f67'):
+  Reference modality: 'poses' -> 306 items.
+  - poses: 306
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000303.pose.txt', 'frame-000304.pose.txt', 'frame-000305.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='bf9a3df1-45a5-2e80-8198-0652e415e289'):
+  Reference modality: 'poses' -> 159 items.
+  - poses: 159
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000156.pose.txt', 'frame-000157.pose.txt', 'frame-000158.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='bf9a3def-45a5-2e80-83f8-65c351d6169b'):
+  Reference modality: 'poses' -> 113 items.
+  - poses: 113
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000110.pose.txt', 'frame-000111.pose.txt', 'frame-000112.pose.txt']
+2026-04-27 17:55:26   [MODALITY MISMATCH] Different file counts for scene (scene_id='ea31825e-0a4c-2749-91f9-1cc45973a0f6'):
+  Reference modality: 'poses' -> 444 items.
+  - poses: 444
+  - graphs: 0
+  samples poses: ['frame-000000.pose.txt', 'frame-000001.pose.txt', 'frame-000002.pose.txt', '...', 'frame-000441.pose.txt', 'frame-000442.pose.txt', 'frame-000443.pose.txt']

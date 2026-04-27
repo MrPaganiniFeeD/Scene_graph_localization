@@ -4,6 +4,7 @@ import torch
 import parser
 import logging
 import sklearn
+import util
 from os.path import join
 from datetime import datetime
 
@@ -26,51 +27,22 @@ logging.info(f"Arguments: {args}")
 logging.info(f"The outputs are being saved in {args.save_dir}")
 
 ######################################### MODEL #########################################
-graph_encoder = network.VPRGraphEncoder(
-    in_dim=args.in_dim_graph,
-    hidden_dim=args.graph_hidden_dim,
-    n_layers=args.graph_layers,
-    num_node_classes=args.num_obj_classes, 
-    node_emb_dim=args.node_emb_dim,
-    num_edge_classes=args.num_edge_classes,
-    edge_emb_dim=args.edge_emb_dim,
-    proj_dim=args.graph_proj,
-    dropout=args.graph_dropout).to(args.device)
-
-GAT_graph_encoder = network.GATGraphEncoder(
-    in_dim=args.in_dim_graph,
-    hidden_dim=args.graph_hidden_dim,
-    n_layers=args.graph_layers,
-    num_node_classes=args.num_obj_classes, 
-    node_emb_dim=args.node_emb_dim,
-    num_edge_classes=args.num_edge_classes,
-    edge_emb_dim=args.edge_emb_dim,
-    proj_dim=args.graph_proj,
-    edge_cont_dim=args.edge_attr_dim,
-    dropout=args.graph_dropout,
-    heads=args.graph_head).to(args.device)
-    
-megaloc = torch.hub.load("gmberton/MegaLoc", "get_trained_model")
-image_encoder = megaloc.to(args.device)
+if args.load_state_mode == "graph":
+    gat_graph_encoder = util.load_model(args, args.load_model)
+elif args.load_state_mode == "image":
+    pass
+elif args.load_state_mode == "multimodal":
+    pass
 
 model = network.MultiModalVPRGraphEncoder(
-    graph_encoder=GAT_graph_encoder,
-    image_encoder=image_encoder,
+    graph_encoder=gat_graph_encoder,
+    image_encoder=None,
     image_out_dim=8448,
     graph_out_dim=256,
     fusion_dim=8448,
     normalize=True,
     graph_fusion_scale=0.05,
-    freeze_image_encoder=True,
-
-).to(args.device)
-
-path_test = "/workspace/tmp/projects/Scene_graph_localization/data/2026-04-22_18-53-25"
-
-checkpoint = torch.load(os.path.join(path_test, "best_model.pth"), map_location='cpu')
-
-model.load_state_dict(checkpoint["model_state_dict"])
-# print("model", model)
+    freeze_image_encoder=True).to(args.device)
 
 
 model = torch.nn.DataParallel(model)
@@ -84,7 +56,7 @@ if args.resume != None:
 test_ds = datasets_ws.BaseDataset(args, args.datasets_folder, args.dataset_name, "test")
 if args.mode == "fusion" or args.mode == "graph":
     norm_ckpt = torch.load(
-        os.path.join(path_test, "edge_normalizer.pt"),
+        os.path.join(args.load_model, "edge_normalizer.pt"),
         map_location="cpu"
     )
 

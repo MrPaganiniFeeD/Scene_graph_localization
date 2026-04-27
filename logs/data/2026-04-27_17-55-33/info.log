@@ -1,0 +1,14 @@
+2026-04-27 17:55:33   Arguments: Namespace(train_batch_size=8, infer_batch_size=16, criterion='triplet', margin=0.5, epochs_num=50, patience=20, lr=1e-05, optim='adam', loss_reduction='sum', mode='graph', cache_refresh_rate=50000, queries_per_epoch=50000, negs_num_per_query=2, neg_samples_num=4000, mining='partial', load_state_mode='None', features_dim=512, in_dim_graph=4, edge_attr_dim=10, graph_rotate=False, soft_positives_radius=0.5, seed=0, resume=None, visualize=True, device='cuda', num_workers=1, resize=[322, 322], dense_feature_map_size=[61, 61, 128], test_method='hard_resize', val_positive_dist_threshold=25, train_positives_dist_threshold=10, recall_values=[1, 5, 10, 25], rerank_num=100, graph_hidden_dim=512, node_emb_dim=128, edge_emb_dim=128, graph_layers=1, num_obj_classes=529, num_edge_classes=41, graph_proj=512, graph_dropout=0.1, graph_lr=1e-05, graph_head=4, modalities=['pose', 'graph'], datasets_folder='/mnt/external_usb_hdd/6YL/Datasets', dataset_name='3RScan', graph_dataset_name='SceneGraphs_real_classes_pt_compact', save_dir='logs/./data/2026-04-27_17-55-33', load_model='./data/2026-04-27_14-03-02', graph_model_name='GATGraphEncoder', multimodel_model_name='MultiModalVPRGraphEncoder', image_mdoel_name=None)
+2026-04-27 17:55:33   The outputs are being saved in logs/./data/2026-04-27_17-55-33
+2026-04-27 17:55:33   Using 1 GPUs and 6 CPUs
+2026-04-27 17:58:53   Removed 88590 queries without pose/soft positives.
+2026-04-27 17:58:54   Train query set: < TripletsDataset, 3RScan - #database: 107197; #queries: 90720 >
+2026-04-27 17:59:10   Test set: < BaseDataset, 3RScan - #database: 9449; #queries: 21013 >
+2026-04-27 18:04:00   HTTP Request: HEAD https://huggingface.co/gberton/MegaLoc/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+2026-04-27 18:04:01   
+Traceback (most recent call last):
+  File "/home/pinkin_ek/projects/Scene_graph_localization/src/train.py", line 167, in <module>
+    graph_encoder=gat_graph_encoder,
+                  ^^^^^^^^^^^^^^^^^
+NameError: name 'gat_graph_encoder' is not defined. Did you mean: 'GAT_graph_encoder'?
+

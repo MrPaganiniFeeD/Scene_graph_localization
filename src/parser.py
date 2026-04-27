@@ -30,11 +30,8 @@ def parse_arguments():
     parser.add_argument("--neg_samples_num", type=int, default=4000,
                         help="How many negatives to use to compute the hardest ones")
     parser.add_argument("--mining", type=str, default="partial", choices=["partial", "full", "random", "msls_weighted"]) # random - random positive and negative, partial - hardest negative
+    parser.add_argument("--load_state_mode", type=str, default="None", help="_", choices=["graph", "image", "multimodal", "None"])
     # Model parameters
-    parser.add_argument("--l2", type=str, default="before_pool", choices=["before_pool", "after_pool", "none"],
-                        help="When (and if) to apply the l2 norm with shallow aggregation layers")
-    parser.add_argument('--pca_dim', type=int, default=None, help="PCA dimension (number of principal components). If None, PCA is not used.")
-    parser.add_argument("--registers", action='store_true', help="_")
     parser.add_argument("--features_dim", type=int, default=512, help="_") # Размер выходного эмбединга
     parser.add_argument("--in_dim_graph", type=int, default=4, help="_") # Размерность геометрических фичей в node
     parser.add_argument("--edge_attr_dim", type=int, default=10, help="_") # Размерность геометрических атрибутов 
@@ -42,11 +39,10 @@ def parse_arguments():
     parser.add_argument("--soft_positives_radius", type=float, default=0.5, help="_") # 
     # Initialization parameters
     parser.add_argument("--seed", type=int, default=0)
-#    parser.add_argument("--foundation_model_path", type=str, default=None,
-#                        help="Path to load foundation model checkpoint.")
     parser.add_argument("--resume", type=str, default=None,
                         help="Path to load checkpoint from, for resuming training or testing.")
     # Other parameters
+    parser.add_argument("--visualize", type=bool, default=True, help='_') # Визуализация (например, для триплетов)
     parser.add_argument("--device", type=str, default="cuda", choices=["cuda", "cpu"])
     parser.add_argument("--num_workers", type=int, default=1, help="num_workers for all dataloaders")
     parser.add_argument('--resize', type=int, default=[322, 322], nargs=2, help="Resizing shape for images (HxW).")
@@ -55,14 +51,12 @@ def parse_arguments():
     parser.add_argument('--test_method', type=str, default="hard_resize",
                         choices=["hard_resize", "single_query", "central_crop", "five_crops", "nearest_crop", "maj_voting"],
                         help="This includes pre/post-processing methods and prediction refinement")
-    parser.add_argument("--majority_weight", type=float, default=0.01, 
-                        help="only for majority voting, scale factor, the higher it is the more importance is given to agreement")
-    parser.add_argument("--efficient_ram_testing", action='store_true', help="_")
     parser.add_argument("--val_positive_dist_threshold", type=int, default=25, help="_")
     parser.add_argument("--train_positives_dist_threshold", type=int, default=10, help="_")
-    parser.add_argument('--recall_values', type=int, default=[1,5,10,20], nargs="+",
+    parser.add_argument('--recall_values', type=int, default=[1,5,10,25], nargs="+",
                         help="Recalls to be computed, such as R@5.")
     parser.add_argument("--rerank_num", type=int, default=100, help="_")
+    
     # GRAPH ENCODER PARAMETRS:
     parser.add_argument("--graph_hidden_dim", type=int, default=512, help="_") # Размерность скрытого слоя 
     parser.add_argument("--node_emb_dim", type=int, default=128, help="_") # Размерность node эмбединга
@@ -79,23 +73,16 @@ def parse_arguments():
     # Data augmentation parameters
     parser.add_argument("--modalities", nargs='+', choices=['image', 'graph', 'pose'], 
                     default=['pose', "graph"], help="List of modalities") # Модальность для datasets_ws. Если режим fusion: ['pose', "graph", "image"], graph: ['pose', "graph"], image: ['pose', "image"] 
-    parser.add_argument("--visualize", type=bool, default=True, help='_') # Визуализация (например, для триплетов)
-    parser.add_argument("--brightness", type=float, default=None, help="_") 
-    parser.add_argument("--contrast", type=float, default=None, help="_")
-    parser.add_argument("--saturation", type=float, default=None, help="_")
-    parser.add_argument("--hue", type=float, default=None, help="_")
-    parser.add_argument("--rand_perspective", type=float, default=None, help="_")
-    parser.add_argument("--horizontal_flip", action='store_true', help="_")
-    parser.add_argument("--random_resized_crop", type=float, default=None, help="_")
-    parser.add_argument("--random_rotation", type=float, default=None, help="_")
     # Paths parameters
     parser.add_argument("--datasets_folder", type=str, default="/mnt/external_usb_hdd/6YL/Datasets", help="Path with all datasets")
     parser.add_argument("--dataset_name", type=str, default="3RScan", help="Relative path of the dataset")
     parser.add_argument("--graph_dataset_name", type=str, default="SceneGraphs_real_classes_pt_compact", help="_")
-    parser.add_argument("--pca_dataset_folder", type=str, default=None,
-                        help="Path with images to be used to compute PCA (ie: pitts30k/images/train")
-    parser.add_argument("--save_dir", type=str, default="C:\Users\Egor\VsCode project\Scene_graph_localization\data",
+    parser.add_argument("--save_dir", type=str, default="./data",
                         help="Folder name of the current run (saved in ./logs/)")
+    parser.add_argument("--load_model", type=str, default="./data/2026-04-27_14-03-02")
+    parser.add_argument("--graph_model_name", type=str, default="GATGraphEncoder", help="_")
+    parser.add_argument("--multimodel_model_name", type=str, default="MultiModalVPRGraphEncoder", help="_")
+    parser.add_argument("--image_mdoel_name", type=str, default=None, help="_")
     args, unknown = parser.parse_known_args()
     if unknown:
         print(f"Ignored unknown arguments: {unknown}")
