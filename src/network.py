@@ -383,30 +383,6 @@ class MultiModalVPRGraphEncoder(nn.Module):
                 for p in self.image_encoder.aggregator.linear.parameters():
                     p.requires_grad = True
 
-        self.image_proj = nn.Sequential(
-            nn.Linear(image_out_dim, fusion_dim),
-            nn.ReLU(inplace=True),
-            nn.LayerNorm(fusion_dim),
-        )
-
-        self.graph_proj = nn.Sequential(
-            nn.Linear(graph_out_dim, fusion_dim),
-            nn.ReLU(inplace=True),
-            nn.LayerNorm(fusion_dim),
-        )
-
-        self.graph_gate = nn.Sequential(
-            nn.Linear(graph_out_dim, fusion_dim),
-            nn.Sigmoid(),
-        )
-
-        self.fuse_norm = nn.LayerNorm(fusion_dim)
-        self.fuse_mlp = nn.Sequential(
-            nn.Linear(fusion_dim, fusion_dim),
-            nn.ReLU(inplace=True),
-            nn.Linear(fusion_dim, fusion_dim),
-        )
-
         self._out_dim = fusion_dim
     def forward(self, graph=None, image=None, mode="fusion", return_parts=False):
         out = {}
@@ -444,12 +420,7 @@ class MultiModalVPRGraphEncoder(nn.Module):
             out["fused"] = z
             return out if return_parts else z
 
-        graph_feat = self.graph_proj(graph_z)
-        gate = self.graph_gate(graph_z)
 
-        fused = image_raw + self.graph_fusion_scale * gate * graph_z
-        fused = self.fuse_norm(fused)
-        fused = fused + 0.1 * self.fuse_mlp(fused)
 
         if self.normalize:
             fused = F.normalize(fused, p=2, dim=1)

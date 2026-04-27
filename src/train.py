@@ -345,7 +345,7 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
     util.save_checkpoint(args, {"epoch_num": epoch_num,
         "multimodal_state_dict": model.state_dict(),
         "graph_state_dict": model.graph_encoder.state_dict() if model.graph_encoder != None else None,
-        "image_state_dict": model.image.state_dict() if model.image_encoder != None else None,
+        "image_state_dict": model.image_encoder.state_dict() if model.image_encoder != None else None,
         "optimizer_state_dict": optimizer.state_dict(),
         "recalls": recalls,
         "best_r5": best_r5,
