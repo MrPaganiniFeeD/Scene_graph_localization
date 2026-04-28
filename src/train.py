@@ -154,8 +154,6 @@ GAT_graph_encoder = network.GATGraphEncoder(
 megaloc = torch.hub.load("gmberton/MegaLoc", "get_trained_model")
 image_encoder = megaloc.to(args.device)
 
-
-### LOAD MODEL
 if args.load_state_mode == "graph":
     gat_graph_encoder = util.load_model(args, args.load_model)
 elif args.load_state_mode == "image":
@@ -163,15 +161,19 @@ elif args.load_state_mode == "image":
 elif args.load_state_mode == "multimodal":
     pass
 
-model = network.MultiModalVPRGraphEncoder(
+model = network.MultiModalVPRCrossAttention(
     graph_encoder=GAT_graph_encoder,
-    image_encoder=None,
-    image_out_dim=8448,
+    image_encoder=image_encoder if "image" in args.modalities else None,
     graph_out_dim=256,
-    fusion_dim=8448,
+    image_out_dim=8448,
+    d_model=512,
+    num_graph_tokens=4,
+    num_image_tokens=16,
+    n_layers=2,
+    freeze_image_encoder=True,
+    train_only_aggregator=True,
     normalize=True,
-    graph_fusion_scale=0.05,
-    freeze_image_encoder=True).to(args.device)
+).to(args.device)
 
 ### Setup Optimizer and Loss
 if args.optim == "adam":
@@ -186,16 +188,32 @@ if args.optim == "adam":
             weight_decay=1e-4
         )
     elif args.mode == "fusion":
-        optimizer = torch.optim.Adam(
+        optimizer = torch.optim.AdamW(
             [
-                {"params": model.graph_encoder.parameters(), "lr": args.lr},
-                {"params": model.graph_gate.parameters(), "lr": args.lr},
-                {"params": model.fuse_norm.parameters(), "lr": args.lr},
-                {"params": model.fuse_mlp.parameters(), "lr": args.lr},
+                # graph encoder
+                {"params": model.graph_encoder.parameters(), "lr": args.graph_lr},
+
+                # cross-attention + fusion
+                {"params": model.graph_token_proj.parameters(), "lr": args.lr},
+                {"params": model.image_token_proj.parameters(), "lr": args.lr},
+                {"params": model.graph_to_image.parameters(), "lr": args.lr},
+                {"params": model.image_to_graph.parameters(), "lr": args.lr},
+                {"params": model.fusion_gate.parameters(), "lr": args.lr},
+                {"params": model.fusion_head.parameters(), "lr": args.lr},
+                {"params": model.out_norm.parameters(), "lr": args.lr},
+
+                # positional embeddings
+                {"params": [model.graph_pos, model.image_pos], "lr": args.lr},
             ],
             weight_decay=1e-4
         )
 
+        
+        if model.image_encoder is not None and False:
+            optimizer.add_param_group({
+                "params": model.image_encoder.aggregator.linear.parameters(),
+                "lr": 3e-7
+            })
 elif args.optim == "sgd":
     optimizer = torch.optim.SGD(base_model.parameters(), lr=args.lr, momentum=0.9, weight_decay=0.001)
 
@@ -351,9 +369,9 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
         "best_r5": best_r5,
         "not_improved_num": not_improved_num,
         "mode": args.mode,
-        "graph_init_args": (model.graph_encoder.init_args if args.load_state_mode == "graph" else None),
-        "multimodal_init_args": (model.init_args if args.load_state_mode == "mulitmodal" else None),
-        "image_init_args": (model.image_encoder.init_args if args.load_state_mode == "iamge" else None)
+        "graph_init_args": (model.graph_encoder.init_args if model.graph_encoder != None else None),
+        "multimodal_init_args": (model.init_args if model != None else None),
+        "image_init_args": (None if model.image_encoder else None)
     }, is_best, filename="last_model.pth")
     
     

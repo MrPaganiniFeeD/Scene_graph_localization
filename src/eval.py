@@ -32,18 +32,9 @@ if args.load_state_mode == "graph":
 elif args.load_state_mode == "image":
     pass
 elif args.load_state_mode == "multimodal":
-    pass
+    loaded_multimodal = util.load_model(args, args.load_model)
 
-model = network.MultiModalVPRGraphEncoder(
-    graph_encoder=gat_graph_encoder,
-    image_encoder=None,
-    image_out_dim=8448,
-    graph_out_dim=256,
-    fusion_dim=8448,
-    normalize=True,
-    graph_fusion_scale=0.05,
-    freeze_image_encoder=True).to(args.device)
-
+model = loaded_multimodal
 
 model = torch.nn.DataParallel(model)
 
