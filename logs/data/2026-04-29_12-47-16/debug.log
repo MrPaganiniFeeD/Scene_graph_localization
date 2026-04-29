@@ -1,0 +1,44 @@
+2026-04-29 12:47:16   Arguments: Namespace(train_batch_size=8, infer_batch_size=16, criterion='triplet', margin=0.5, epochs_num=50, patience=20, lr=1e-05, optim='adam', loss_reduction='sum', mode='graph', cache_refresh_rate=50000, queries_per_epoch=50000, negs_num_per_query=2, neg_samples_num=4000, mining='partial', load_state_mode='None', features_dim=256, in_dim_graph=4, edge_attr_dim=10, graph_rotate=False, soft_positives_radius=0.5, seed=0, resume=None, visualize=True, device='cuda', num_workers=1, resize=[322, 322], dense_feature_map_size=[61, 61, 128], test_method='hard_resize', val_positive_dist_threshold=25, train_positives_dist_threshold=10, recall_values=[1, 5, 10, 25], rerank_num=100, graph_hidden_dim=512, node_emb_dim=128, edge_emb_dim=128, graph_layers=1, num_obj_classes=529, num_edge_classes=41, graph_proj=512, graph_dropout=0.1, graph_lr=1e-05, graph_head=4, modalities=['pose', 'graph'], datasets_folder='/mnt/external_usb_hdd/6YL/Datasets', dataset_name='3RScan', graph_dataset_name='SceneGraphs_real_classes_pt_compact', save_dir='logs/./data/2026-04-29_12-47-16', load_model='./data/2026-04-27_14-03-02', graph_model_name='GATGraphEncoder', multimodel_model_name='MultiModalVPRGraphEncoder', image_mdoel_name=None)
+2026-04-29 12:47:16   The outputs are being saved in logs/./data/2026-04-29_12-47-16
+2026-04-29 12:47:16   Using 1 GPUs and 6 CPUs
+2026-04-29 12:47:16   Loading dataset 3RScan from folder /mnt/external_usb_hdd/6YL/Datasets
+2026-04-29 12:50:19   Removed 88590 queries without pose/soft positives.
+2026-04-29 12:50:19   Train query set: < TripletsDataset, 3RScan - #database: 107197; #queries: 90720 >
+2026-04-29 12:50:42   Test set: < BaseDataset, 3RScan - #database: 9449; #queries: 21013 >
+2026-04-29 12:55:23   connect_tcp.started host='huggingface.co' port=443 local_address=None timeout=10 socket_options=None
+2026-04-29 12:55:23   connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x7dd8eda8dbe0>
+2026-04-29 12:55:23   start_tls.started ssl_context=<ssl.SSLContext object at 0x7dd8e2d8d1d0> server_hostname='huggingface.co' timeout=10
+2026-04-29 12:55:23   start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x7dd8edac5950>
+2026-04-29 12:55:23   send_request_headers.started request=<Request [b'HEAD']>
+2026-04-29 12:55:23   send_request_headers.complete
+2026-04-29 12:55:23   send_request_body.started request=<Request [b'HEAD']>
+2026-04-29 12:55:23   send_request_body.complete
+2026-04-29 12:55:23   receive_response_headers.started request=<Request [b'HEAD']>
+2026-04-29 12:55:23   receive_response_headers.complete return_value=(b'HTTP/1.1', 302, b'Found', [(b'Content-Type', b'text/plain; charset=utf-8'), (b'Content-Length', b'1343'), (b'Connection', b'keep-alive'), (b'Date', b'Wed, 29 Apr 2026 09:55:23 GMT'), (b'Location', b'https://cas-bridge.xethub.hf.co/xet-bridge-us/67c0777657815170e7d12297/1fb01a9c0c93f11e061334083a6490de3e22d27db33afaf4a673b499fe50a6c7?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260429%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260429T095523Z&X-Amz-Expires=3600&X-Amz-Signature=47abc13d361ff2516a70069459055ba237b17bd18b45f02ddd002dfe7c3c2fab&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model.safetensors%3B+filename%3D%22model.safetensors%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1777460123&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NzQ2MDEyM319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2MwNzc3NjU3ODE1MTcwZTdkMTIyOTcvMWZiMDFhOWMwYzkzZjExZTA2MTMzNDA4M2E2NDkwZGUzZTIyZDI3ZGIzM2FmYWY0YTY3M2I0OTlmZTUwYTZjNyoifV19&Signature=f71O5lwOuA1zFT35O2RpljgA2-rZaAHHccr6U8KDc0d9ysMJKxpsX9Le5U0pCEZnWw01wrTSa0mPu9wTzmgkvSdD8yMIdLBrpGJhs1rPr9QbaiODNMljYNEWcNhMBlg1n7SLVH0bU%7ENf2iVQpkeOndtf9eO8jm2yms3hiPDMFsG6SZFEDJ2rgMuRDjgluW-drpFEnHmCfWzpj8woPufjg9RLV6YEcDsTzuIV0B9vZgY0nhB-ohQvU4Tj8jPKb8Wjhw57T%7ETXQ2SSoARZvOg2Vd9jd0jFpstYlOQCVqS8af0X4JeILbVr6xY9lsc-5TZwTkg1htgz851tnPG9TLfq2g__&Key-Pair-Id=K2L8F4GPSG1IFC'), (b'X-Powered-By', b'huggingface-moon'), (b'X-Request-Id', b'Root=1-69f1d58b-150520c419d1ab4f160c6cc2;4c4da330-6869-4b6f-90e7-02873a455186'), (b'RateLimit', b'"resolvers";r=2999;t=285'), (b'RateLimit-Policy', b'"fixed window";"resolvers";q=3000;w=300'), (b'cross-origin-opener-policy', b'same-origin'), (b'Referrer-Policy', b'strict-origin-when-cross-origin'), (b'Access-Control-Max-Age', b'86400'), (b'Access-Control-Allow-Origin', b'https://huggingface.co'), (b'Vary', b'Origin, Accept'), (b'Access-Control-Expose-Headers', b'X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash'), (b'X-Repo-Commit', b'7cb9f7970d366fdf059963d04d372e503e8e9df9'), (b'Accept-Ranges', b'bytes'), (b'X-HF-Warning', b'unauthenticated; Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.'), (b'X-Hub-Cache', b'MISS'), (b'X-Linked-Size', b'914577436'), (b'X-Linked-ETag', b'"d4f9f2bcb60018f91eb6a8e061ed054fd55654e10c2569cf13841ea986ffb4f8"'), (b'X-Xet-Hash', b'1fb01a9c0c93f11e061334083a6490de3e22d27db33afaf4a673b499fe50a6c7'), (b'Link', b'<https://huggingface.co/api/models/gberton/MegaLoc/xet-read-token/7cb9f7970d366fdf059963d04d372e503e8e9df9>; rel="xet-auth", <https://cas-server.xethub.hf.co/v1/reconstructions/1fb01a9c0c93f11e061334083a6490de3e22d27db33afaf4a673b499fe50a6c7>; rel="xet-reconstruction-info"'), (b'X-Cache', b'Miss from cloudfront'), (b'Via', b'1.1 c47f2ac3504d76b47bea1a99ab6b08fc.cloudfront.net (CloudFront)'), (b'X-Amz-Cf-Pop', b'WAW51-P1'), (b'X-Amz-Cf-Id', b'Amki4Grc4RJl1xSpQL2ygi6wZPHH0SnYSDEF6v7HVDYNrdThzkVEmg==')])
+2026-04-29 12:55:23   HTTP Request: HEAD https://huggingface.co/gberton/MegaLoc/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+2026-04-29 12:55:23   receive_response_body.started request=<Request [b'HEAD']>
+2026-04-29 12:55:23   receive_response_body.complete
+2026-04-29 12:55:23   response_closed.started
+2026-04-29 12:55:23   response_closed.complete
+2026-04-29 12:55:23   Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-29 12:55:24   Start training epoch: 00
+2026-04-29 12:55:24   Cache: 0 / 1
+2026-04-29 12:55:24   close.started
+2026-04-29 12:55:24   close.complete
+2026-04-29 12:55:25   
+Traceback (most recent call last):
+  File "/home/pinkin_ek/projects/Scene_graph_localization/src/train.py", line 247, in <module>
+    triplets_ds.compute_triplets(args, model)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/pinkin_ek/projects/Scene_graph_localization/src/datasets_ws.py", line 1476, in compute_triplets
+    self.compute_triplets_partial(args, model)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/pinkin_ek/projects/Scene_graph_localization/src/datasets_ws.py", line 1549, in compute_triplets_partial
+    cache = self.compute_cache(args, model, subset_ds, cache_shape=(len(self.items), args.features_dim))
+  File "/home/pinkin_ek/projects/Scene_graph_localization/src/datasets_ws.py", line 1424, in compute_cache
+    cache[batch_indices] = global_features.detach().cpu().numpy()
+    ~~~~~^^^^^^^^^^^^^^^
+ValueError: shape mismatch: value array of shape (16,512) could not be broadcast to indexing result of shape (16,256)
+
+2026-04-29 12:55:25   close.started
+2026-04-29 12:55:25   close.complete

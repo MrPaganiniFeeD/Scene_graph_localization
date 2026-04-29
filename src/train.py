@@ -150,6 +150,7 @@ GAT_graph_encoder = network.GATGraphEncoder(
     edge_cont_dim=args.edge_attr_dim,
     dropout=args.graph_dropout,
     heads=args.graph_head).to(args.device)
+
     
 megaloc = torch.hub.load("gmberton/MegaLoc", "get_trained_model")
 image_encoder = megaloc.to(args.device)
@@ -161,19 +162,19 @@ elif args.load_state_mode == "image":
 elif args.load_state_mode == "multimodal":
     pass
 
-model = network.MultiModalVPRCrossAttention(
-    graph_encoder=GAT_graph_encoder,
+model = network.MultiModalVPRGraphEncoder(
+    graph_encoder=graph_encoder,
     image_encoder=image_encoder if "image" in args.modalities else None,
     graph_out_dim=256,
     image_out_dim=8448,
-    d_model=512,
-    num_graph_tokens=4,
-    num_image_tokens=16,
-    n_layers=2,
     freeze_image_encoder=True,
     train_only_aggregator=True,
     normalize=True,
 ).to(args.device)
+
+args.graph_model_name = model.graph_encoder.__class__.__name__
+args.image_model_name = model.image_encoder.__class__.__name__
+args.multimodel_model_name = model.__class__.__name__
 
 ### Setup Optimizer and Loss
 if args.optim == "adam":
