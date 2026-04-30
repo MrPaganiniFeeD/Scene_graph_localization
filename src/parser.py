@@ -20,19 +20,19 @@ def parse_arguments():
     parser.add_argument("--lr", type=float, default=0.00001, help="_")
     parser.add_argument("--optim", type=str, default="adam", help="_", choices=["adam", "sgd"])
     parser.add_argument("--loss_reduction", type=str, default="sum", help="_", choices=["mean"]) # лос по батчам складывается (sum) или усредняется (mean)
-    parser.add_argument("--mode", type=str, default="graph", help="_", choices=["graph", "image", "fusion"]) # режим обучения
-    parser.add_argument("--cache_refresh_rate", type=int, default=50000,
+    parser.add_argument("--mode", type=str, default="fusion", help="_", choices=["graph", "image", "fusion"]) # режим обучения
+    parser.add_argument("--cache_refresh_rate", type=int, default=2000,
                         help="How often to refresh cache, in number of queries") # размера кэша 
-    parser.add_argument("--queries_per_epoch", type=int, default=50000,
+    parser.add_argument("--queries_per_epoch", type=int, default=5000,
                         help="How many queries to consider for one epoch. Must be multiple of cache_refresh_rate")
     parser.add_argument("--negs_num_per_query", type=int, default=2,
                         help="How many negatives to consider per each query in the loss")
-    parser.add_argument("--neg_samples_num", type=int, default=4000,
+    parser.add_argument("--neg_samples_num", type=int, default=5000,
                         help="How many negatives to use to compute the hardest ones")
     parser.add_argument("--mining", type=str, default="partial", choices=["partial", "full", "random", "msls_weighted"]) # random - random positive and negative, partial - hardest negative
     parser.add_argument("--load_state_mode", type=str, default="None", help="_", choices=["graph", "image", "multimodal", "None"])
     # Model parameters
-    parser.add_argument("--features_dim", type=int, default=512, help="_") # Размер выходного эмбединга
+    parser.add_argument("--features_dim", type=int, default=256 + 8448, help="_") # Размер выходного эмбединга
     parser.add_argument("--in_dim_graph", type=int, default=4, help="_") # Размерность геометрических фичей в node
     parser.add_argument("--edge_attr_dim", type=int, default=10, help="_") # Размерность геометрических атрибутов 
     parser.add_argument("--graph_rotate", type=bool, default=False, help="_") # Graph rotate
@@ -64,7 +64,7 @@ def parse_arguments():
     parser.add_argument("--graph_layers", type=int, default=1, help="_") # Количество слоёв
     parser.add_argument("--num_obj_classes", type=int, default=528 + 1, help="_") # Количество классов node 
     parser.add_argument("--num_edge_classes", type=int, default=41, help="_") # Количество edge классов 
-    parser.add_argument("--graph_proj", type=int, default=512, help="_") # выходной эмбединг 
+    parser.add_argument("--graph_proj", type=int, default=256, help="_") # выходной эмбединг 
     parser.add_argument("--graph_dropout", type=float, default=0.1, help="_") # dropout
     parser.add_argument("--graph_lr", type=float, default=0.00001, help="_") # 
     parser.add_argument("--graph_head", type=int, default=4, help="_") # Количество голов (для graph attention)
@@ -72,12 +72,12 @@ def parse_arguments():
 
     # Data augmentation parameters
     parser.add_argument("--modalities", nargs='+', choices=['image', 'graph', 'pose'], 
-                    default=['pose', "graph"], help="List of modalities") # Модальность для datasets_ws. Если режим fusion: ['pose', "graph", "image"], graph: ['pose', "graph"], image: ['pose', "image"] 
+                    default=['pose', "graph", "image"], help="List of modalities") # Модальность для datasets_ws. Если режим fusion: ['pose', "graph", "image"], graph: ['pose', "graph"], image: ['pose', "image"] 
     # Paths parameters
     parser.add_argument("--datasets_folder", type=str, default="/mnt/external_usb_hdd/6YL/Datasets", help="Path with all datasets")
     parser.add_argument("--dataset_name", type=str, default="3RScan", help="Relative path of the dataset")
     parser.add_argument("--graph_dataset_name", type=str, default="SceneGraphs_real_classes_pt_compact", help="_")
-    parser.add_argument("--save_dir", type=str, default="./data",
+    parser.add_argument("--save_dir", type=str, default="/home/pinkin_ek/projects/Scene_graph_localization/data",
                         help="Folder name of the current run (saved in ./logs/)")
     parser.add_argument("--load_model", type=str, default="./data/2026-04-27_14-03-02")
     parser.add_argument("--graph_model_name", type=str, default="GATGraphEncoder", help="_")

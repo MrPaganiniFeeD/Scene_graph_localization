@@ -162,13 +162,14 @@ elif args.load_state_mode == "image":
 elif args.load_state_mode == "multimodal":
     pass
 
-model = network.MultiModalVPRGraphEncoder(
+model = network.FusionMLP(
     graph_encoder=graph_encoder,
     image_encoder=image_encoder if "image" in args.modalities else None,
     graph_out_dim=256,
     image_out_dim=8448,
+    fusion_dim=4096,
     freeze_image_encoder=True,
-    train_only_aggregator=True,
+    train_only_aggregator=False,
     normalize=True,
 ).to(args.device)
 
@@ -193,18 +194,8 @@ if args.optim == "adam":
             [
                 # graph encoder
                 {"params": model.graph_encoder.parameters(), "lr": args.graph_lr},
-
-                # cross-attention + fusion
-                {"params": model.graph_token_proj.parameters(), "lr": args.lr},
-                {"params": model.image_token_proj.parameters(), "lr": args.lr},
-                {"params": model.graph_to_image.parameters(), "lr": args.lr},
-                {"params": model.image_to_graph.parameters(), "lr": args.lr},
-                {"params": model.fusion_gate.parameters(), "lr": args.lr},
-                {"params": model.fusion_head.parameters(), "lr": args.lr},
-                {"params": model.out_norm.parameters(), "lr": args.lr},
-
-                # positional embeddings
-                {"params": [model.graph_pos, model.image_pos], "lr": args.lr},
+                # fusion
+                {"params": model.mlp.parameters(), "lr": args.lr},
             ],
             weight_decay=1e-4
         )
@@ -265,7 +256,7 @@ for epoch_num in range(start_epoch_num, args.epochs_num):
                 visualize.visualize_triplet_images(
                     dataset=triplets_ds,
                     triplets_global_indexes=triplets_global_indexes,
-                    save_dir="/workspace/tmp/projects/Scene_graph_localization/data/triplets_vis",       
+                    save_dir=args.save_dir,       
                     num_triplets_to_show=20,
                     max_boxes=30,
                     coords_normalized=True,   # если graph['x'] в [0,1]
