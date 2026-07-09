@@ -1,6 +1,6 @@
 # Scene_graph_localization
 Graph Place Recognition Encoder
-[GPRe_cropped (2).pdf](https://github.com/user-attachments/files/29847851/GPRe_cropped.2.pdf)
+<img width="2030" height="467" alt="GPRe_cropped 2" src="https://github.com/user-attachments/assets/5e27fd4b-c5c1-4bd4-bace-e93e121cc3f8" />
 ## Installation
 
 
